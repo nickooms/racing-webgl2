@@ -1,0 +1,96 @@
+*** ListTalen
+
+*** ListGewesten
+*** GetGewestByGewestIdAndTaalCode
+
+*** ListGemeentenByGewestId
+*** GetGemeenteByGemeenteId
+
+*** ListStraatnamenByGemeenteId
+*** GetStraatnaamByStraatnaamId
+
+*** ListHuisnummersByStraatnaamId
+*** GetHuisnummerByHuisnummerId
+
+*** ListPercelenByHuisnummerId
+*** GetPerceelByIdentificatorPerceel
+
+*** ListGebouwenByHuisnummerId
+*** GetGebouwByIdentificatorGebouw
+
+*** ListTerreinobjectenByHuisnummerId
+*** GetTerreinobjectByIdentificatorTerreinobject
+
+*** ListWegobjectenByStraatnaamId
+*** GetWegobjectByIdentificatorWegobject
+
+*** ListWegsegmentenByStraatnaamId
+*** GetWegsegmentByIdentificatorWegsegment
+
+    FindGemeenten
+    FindGemeentenByPostkanton
+    FindHuisnummers
+    FindHuisnummersWithStatus
+    FindStraatnamen
+    FindStraatnamenWithStatus
+    FindSubadressen
+    FindSubadressenWithStatus
+    GetAdrespositieByAdrespositieId
+    GetGemeenteByGemeenteNaam
+    GetGemeenteByNISGemeenteCode
+    GetHashCode
+    GetHuisnummerByHuisnummer
+    GetHuisnummerWithStatusByHuisnummer
+    GetHuisnummerWithStatusByHuisnummerId
+    GetPostadresByHuisnummerId
+    GetPostadresBySubadresId
+    GetPostkantonByHuisnummerId
+    GetRijksregisterStraatByRijksregisterStraatCode
+    GetStraatnaamByRijksregisterStraatCode
+    GetStraatnaamByStraatnaam
+    GetStraatnaamWithStatusByRijksregisterStraatCode
+    GetStraatnaamWithStatusByStraatnaam
+    GetStraatnaamWithStatusByStraatnaamId
+    GetSubadresBySubadresId
+    GetSubadresWithStatusBySubadresId
+    GetType
+    ListAardAdressen
+    ListAardGebouwen
+    ListAardSubadressen
+    ListAardTerreinobjecten
+    ListAardWegobjecten
+    ListAdrespositiesByHuisnummer
+    ListAdrespositiesByHuisnummerId
+    ListAdrespositiesBySubadres
+    ListAdrespositiesBySubadresId
+    ListBewerkingen
+    ListGebouwenByHuisnummer
+    ListGeometriemethodeGebouwen
+    ListGeometriemethodeWegsegmenten
+    ListHerkomstAdresposities
+    ListHuisnummersByIdentificatorTerreinobject
+    ListHuisnummersWithStatusByIdentificatorGebouw
+    ListHuisnummersWithStatusByIdentificatorPerceel
+    ListHuisnummersWithStatusByIdentificatorTerreinobject
+    ListHuisnummersWithStatusByRijksregisterAdresId
+    ListHuisnummersWithStatusByStraatnaamId
+    ListOrganisaties
+    ListPercelenByHuisnummer
+    ListPostadressenByStraatnaamId
+ListPostkantonsByGemeenteId
+    ListRijksregisterAdresByHuisnummer
+    ListRijksregisterAdresByHuisnummerId
+    ListRijksregisterAdresBySubadresId
+    ListRijksregisterStratenByStraatnaamId
+    ListStatusGebouwen
+    ListStatusHuisnummers
+    ListStatusStraatnamen
+    ListStatusSubadressen
+    ListStatusWegsegmenten
+    ListStraatnamenByIdentificatorWegobject
+    ListStraatnamenWithStatusByGemeenteId
+    ListStraatnamenWithStatusByIdentificatorWegobject
+    ListStraatnamenWithStatusByIdentificatorWegsegment
+    ListSubadressenByHuisnummerId
+    ListSubadressenWithStatusByHuisnummerId
+    ListSubadressenWithStatusByRijksregisterAdresId
