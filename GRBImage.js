@@ -94,6 +94,8 @@ const lineStrings = x => x.map(lineString);
 
 const SIZE = 1000;
 
+const float3 = x => parseFloat(x.toFixed(3));
+
 const getLayer = ({ width = SIZE, height = SIZE, bbox }) =>
   query({ width, height, bbox })
   .then(({ img }) => new GRBCanvas(width, height, bbox, img));
@@ -126,12 +128,13 @@ const GRBImage = {
                 const vertices = corners.map(({ x, y }) => [x, y]);
                 const coords = corners
                   .map(corner => fillCanvas.coordinate(corner))
-                  .map(({ x, y }) => [parseFloat(x.toFixed(3)), parseFloat(y.toFixed(3))]);
+                  .map(({ x, y }) => [float3(x), float3(y)]);
                 const bboxCoords = new BBOX(corners.map(corner => fillCanvas.coordinate(corner)));
+                const { center: mid } = bboxCoords;
                 const centeredCoords = coords.concat([coords[0]]).map(([x, y]) => [
-                  parseFloat((bboxCoords.center.x - x).toFixed(3)),
+                  parseFloat((mid.x - x).toFixed(3)),
                   0,
-                  parseFloat((bboxCoords.center.y - y).toFixed(3)),
+                  parseFloat((mid.y - y).toFixed(3)),
                 ]);
                 const json = JSON.stringify(centeredCoords)
                   .replace('[[', '{\n  position: [')
@@ -141,25 +144,28 @@ const GRBImage = {
                   .split('],[')
                   .join(',');
                 console.log(json);
-                console.log(`  normal: [${coords.concat([null, null]).map(() => '0,1,0,').join(' ')}],`);
-                console.log(`  texcoord: [${coords.map(() => '0,0,').join(' ')}],`);
+                console.log(`  center: [${float3(mid.x)},${float3(mid.y)}],`);
+                console.log(`  normal: [${coords.concat([null, null]).map(() => '0,1,0,').join('')}],`);
+                console.log(`  texcoord: [${coords.map(() => '0,0,').join('')}],`);
                 const triangles = earcut(flatten(vertices));
                 const ctx = fillCanvas.ctx;
                 const indices = [];
                 for (let i = triangles.length; i;) {
                   ctx.beginPath();
                   const index = [];
-                  --i; ctx.moveTo(vertices[triangles[i]][0], vertices[triangles[i]][1]);
+                  for (let j = 0; j < 3; j++) {
+                    --i; ctx.moveTo(vertices[triangles[i]][0], vertices[triangles[i]][1]);
+                    index.push(triangles[i]);
+                  }
+                  /* --i; ctx.lineTo(vertices[triangles[i]][0], vertices[triangles[i]][1]);
                   index.push(triangles[i]);
                   --i; ctx.lineTo(vertices[triangles[i]][0], vertices[triangles[i]][1]);
-                  index.push(triangles[i]);
-                  --i; ctx.lineTo(vertices[triangles[i]][0], vertices[triangles[i]][1]);
-                  index.push(triangles[i]);
+                  index.push(triangles[i]);*/
                   indices.push(`${index.join(',')}`);
                   ctx.closePath();
                   ctx.stroke();
                 }
-                console.log(`  indices: [${indices.join(', ')}]\n},`);
+                console.log(`  indices: [${indices.join(',')}]\n},`);
                 // const filledColor = detailFillColor === 0xff0000ff ? 'Red' : 'Green';
                 // console.log(`${filledColor} = ${corners.length} corners`);
               }

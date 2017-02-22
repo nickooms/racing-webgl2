@@ -1,4 +1,4 @@
-module.exports = class {
+class BBOX {
   constructor(points) {
     this.min = { x: Infinity, y: Infinity };
     this.max = { x: -Infinity, y: -Infinity };
@@ -49,4 +49,6 @@ module.exports = class {
       this.max = { x: Math.max(this.max.x, x), y: Math.max(this.max.y, y) };
     });
   }
-};
+}
+
+if (typeof module !== 'undefined') module.exports = BBOX;

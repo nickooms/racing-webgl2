@@ -49,8 +49,21 @@ console.log(arrays);*/
   tableCollapsed('texcoord', texcoord, texcoord => ({ texcoord }));
   tableCollapsed('indices ', indices, indices => ({ indices }));
 });*/
-
-const bufferInfo = twgl.createBufferInfoFromArrays(gl, arrays);
+const centers = arraysList.map(({ center: [x, y] }) => ({ x, y }));
+const bbox = new BBOX(centers);
+// console.log(bbox);
+const bufferInfos = arraysList.map(({ center, position: pos, normal, texcoord, indices }) => {
+  const position = [];
+  for (let i = 0; i < pos.length; i += 3) {
+    position.push(pos[i + 2] + (bbox.center.y - center[1]));
+    position.push(0);
+    position.push(pos[i] + (bbox.center.x - center[0]));
+  }
+  // console.log(position);
+  return twgl.createBufferInfoFromArrays(gl, { position, normal, texcoord, indices });
+});
+// const { position, normal, texcoord, indices } = arraysList[0];
+// const bufferInfo = twgl.createBufferInfoFromArrays(gl, { position, normal, texcoord, indices });
 // console.log(bufferInfo);
 
 const tex = twgl.createTexture(gl, {
@@ -84,8 +97,9 @@ function render(time) {
   // gl.enable(CULL_FACE);
   gl.clear(COLOR_BUFFER_BIT | DEPTH_BUFFER_BIT);
   const aspectRatio = clientWidth / clientHeight;
-  const projection = m4.perspective(30 * Math.PI / 180, aspectRatio, 0.5, 50);
-  const eye = [1, 44, -10];
+  const h = Math.max(bbox.width, bbox.height);
+  const projection = m4.perspective(30 * Math.PI / 180, aspectRatio, 600, h);
+  const eye = [1, h, h];
   const target = [0, 0, 0];
   const up = [0, 1, 0];
   const camera = m4.lookAt(eye, target, up);
@@ -99,9 +113,13 @@ function render(time) {
     u_worldViewProjection: m4.multiply(viewProjection, world),
   });
   gl.useProgram(programInfo.program);
-  twgl.setBuffersAndAttributes(gl, programInfo, bufferInfo);
-  twgl.setUniforms(programInfo, uniforms);
-  gl.drawElements(TRIANGLES, bufferInfo.numElements, UNSIGNED_SHORT, 0);
+  bufferInfos.forEach((bufferInfo, i) => {
+    twgl.setBuffersAndAttributes(gl, programInfo, bufferInfo);
+    twgl.setUniforms(programInfo, uniforms);
+
+    gl.drawElements(TRIANGLES, bufferInfo.numElements, UNSIGNED_SHORT, 0);
+    // console.dir(bufferInfo);
+  });
   requestAnimationFrame(render);
 }
 
