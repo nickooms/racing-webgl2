@@ -41,7 +41,7 @@ console.log(arrays);*/
 }*/
 // console.log(JSON.stringify(arrays));
 
-// const arrays = Lines.toBufferInfoArrays(Polygon.toCenteredLines(Markt19));
+const arrays = Lines.toBufferInfoArrays(Polygon.toCenteredLines(Markt19));
 
 /* group('BufferInfoArrays')(({ position, normal, texcoord, indices } = arrays) => {
   tableCollapsed('position', position, position => ({ position }));
@@ -51,7 +51,6 @@ console.log(arrays);*/
 });*/
 const centers = arraysList.map(({ center: [x, y] }) => ({ x, y }));
 const bbox = new BBOX(centers);
-// console.log(bbox);
 const bufferInfos = arraysList.map(({ center, position: pos, normal, texcoord, indices }) => {
   const position = [];
   for (let i = 0; i < pos.length; i += 3) {
@@ -59,12 +58,9 @@ const bufferInfos = arraysList.map(({ center, position: pos, normal, texcoord, i
     position.push(0);
     position.push(pos[i] + (bbox.center.x - center[0]));
   }
-  // console.log(position);
   return twgl.createBufferInfoFromArrays(gl, { position, normal, texcoord, indices });
 });
-// const { position, normal, texcoord, indices } = arraysList[0];
-// const bufferInfo = twgl.createBufferInfoFromArrays(gl, { position, normal, texcoord, indices });
-// console.log(bufferInfo);
+const marktBuffer = twgl.createBufferInfoFromArrays(gl, arrays);
 
 const tex = twgl.createTexture(gl, {
   min: NEAREST,
@@ -78,14 +74,20 @@ const tex = twgl.createTexture(gl, {
 });
 
 const uniforms = {
-  u_lightWorldPos: [1, 5, -20],
+  u_lightWorldPos: [1, 6, -20],
   u_lightColor: [0.8, 0.8, 1, 1],
   u_ambient: [0, 0, 0, 1],
   u_specular: [1, 1, 1, 1],
-  u_shininess: 75,
+  u_shininess: 50,
   u_specularFactor: 1,
   u_diffuse: tex,
 };
+
+let h = Math.max(bbox.width, bbox.height);
+
+window.addEventListener('wheel', evt => {
+  h -= evt.wheelDelta / 12;
+}, false);
 
 function render(time) {
   time *= 0.001;
@@ -94,10 +96,10 @@ function render(time) {
   twgl.resizeCanvasToDisplaySize(canvas);
   gl.viewport(0, 0, width, height);
   gl.enable(DEPTH_TEST);
+  gl.clearColor(0, 0, 0, 1);
   // gl.enable(CULL_FACE);
   gl.clear(COLOR_BUFFER_BIT | DEPTH_BUFFER_BIT);
   const aspectRatio = clientWidth / clientHeight;
-  const h = Math.max(bbox.width, bbox.height);
   const projection = m4.perspective(30 * Math.PI / 180, aspectRatio, 600, h);
   const eye = [1, h, h];
   const target = [0, 0, 0];
@@ -116,10 +118,11 @@ function render(time) {
   bufferInfos.forEach((bufferInfo, i) => {
     twgl.setBuffersAndAttributes(gl, programInfo, bufferInfo);
     twgl.setUniforms(programInfo, uniforms);
-
     gl.drawElements(TRIANGLES, bufferInfo.numElements, UNSIGNED_SHORT, 0);
-    // console.dir(bufferInfo);
   });
+  twgl.setBuffersAndAttributes(gl, programInfo, marktBuffer);
+  twgl.setUniforms(programInfo, uniforms);
+  gl.drawElements(TRIANGLES, marktBuffer.numElements, UNSIGNED_SHORT, 0);
   requestAnimationFrame(render);
 }
 

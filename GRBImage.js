@@ -112,6 +112,7 @@ const GRBImage = {
       getLayer({ width, height, bbox })
       .then((canvas) => {
         canvasList.push(canvas);
+        const result = [];
         Promise.all(coordinates.map((coordinate) => {
           const fill = canvas.flood(coordinate);
           if (fill) {
@@ -121,7 +122,7 @@ const GRBImage = {
             .then((detailCanvas) => {
               const detailFilled = detailCanvas.flood(coordinate);
               if (detailFilled) {
-                const { fillCanvas/* , fillColor: detailFillColor*/ } = detailFilled;
+                const { fillCanvas } = detailFilled;
                 canvasList.push(fillCanvas);
                 const border = MarchingSquares.getBlobOutlinePoints(fillCanvas);
                 const corners = simplify(border, 1.5);
@@ -131,22 +132,8 @@ const GRBImage = {
                   .map(({ x, y }) => [float3(x), float3(y)]);
                 const bboxCoords = new BBOX(corners.map(corner => fillCanvas.coordinate(corner)));
                 const { center: mid } = bboxCoords;
-                const centeredCoords = coords.concat([coords[0]]).map(([x, y]) => [
-                  parseFloat((mid.x - x).toFixed(3)),
-                  0,
-                  parseFloat((mid.y - y).toFixed(3)),
-                ]);
-                const json = JSON.stringify(centeredCoords)
-                  .replace('[[', '{\n  position: [')
-                  .replace(']]', '],')
-                  .split(',')
-                  .join(',')
-                  .split('],[')
-                  .join(',');
-                console.log(json);
-                console.log(`  center: [${float3(mid.x)},${float3(mid.y)}],`);
-                console.log(`  normal: [${coords.concat([null, null]).map(() => '0,1,0,').join('')}],`);
-                console.log(`  texcoord: [${coords.map(() => '0,0,').join('')}],`);
+                const centeredCoords = coords.concat([coords[0]]).map(([x, y]) =>
+                  [float3((mid.x - x)), 0, float3((mid.y - y))]);
                 const triangles = earcut(flatten(vertices));
                 const ctx = fillCanvas.ctx;
                 const indices = [];
@@ -154,20 +141,23 @@ const GRBImage = {
                   ctx.beginPath();
                   const index = [];
                   for (let j = 0; j < 3; j++) {
-                    --i; ctx.moveTo(vertices[triangles[i]][0], vertices[triangles[i]][1]);
+                    --i;
+                    const triangle = triangles[i];
+                    ctx.moveTo(vertices[triangle][0], vertices[triangle][1]);
                     index.push(triangles[i]);
                   }
-                  /* --i; ctx.lineTo(vertices[triangles[i]][0], vertices[triangles[i]][1]);
-                  index.push(triangles[i]);
-                  --i; ctx.lineTo(vertices[triangles[i]][0], vertices[triangles[i]][1]);
-                  index.push(triangles[i]);*/
-                  indices.push(`${index.join(',')}`);
+                  indices.push(index);
                   ctx.closePath();
                   ctx.stroke();
                 }
-                console.log(`  indices: [${indices.join(',')}]\n},`);
-                // const filledColor = detailFillColor === 0xff0000ff ? 'Red' : 'Green';
-                // console.log(`${filledColor} = ${corners.length} corners`);
+                const obj = {
+                  position: flatten(centeredCoords),
+                  center: [float3(mid.x),float3(mid.y)],
+                  normal: flatten(coords.concat([null, null]).map(() => [0, 1, 0])),
+                  texcoord: flatten(coords.map(() => [0, 0])),
+                  indices: flatten(triangles),
+                }
+                result.push(obj);
               }
               return detailCanvas;
             });
@@ -176,6 +166,17 @@ const GRBImage = {
         }))
         // .then(getCorners)
         // .then(log)
+        .then(() => {
+          let json = JSON.stringify(result);
+          const names = ['position', 'center', 'normal', 'texcoord', 'indices'];
+          names.forEach(x => json = json.split(`"${x}":`).join(`\n  ${x}: `));
+          json = json
+            .replace('[{', '[{')
+            .replace(']}]', ']\n}]')
+            .split('},{')
+            .join('\n}, {');
+          console.log(json);
+        })
         .then(() => res.send(canvasListToHTML(canvasList)));
       })
       .catch(error);
