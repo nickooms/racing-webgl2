@@ -6,12 +6,14 @@ const config = require('config');
 // const Canvas = require('canvas');
 const cors = require('cors');
 // const fs = require('fs');
-
+const db = require('./db');
 // const floodfill = require('./floodfill');
 // const GeoCanvas = require('./GeoCanvas');
 const GRBImage = require('./GRBImage');
 // const MarchingSquares = require('./MarchingSquares');
 const Objects = require('./app/routes');
+
+const Wegbaan = require('./models/Wegbaan');
 // const simplify = require('./simplify');
 // const Random = require('./Random');
 // const BBOX = require('./BBOX');
@@ -78,16 +80,16 @@ const {
 } = perceel;
 
 const PORT = 8080;
-// const option = { socketOptions: { keepAlive: 1, connectTimeoutMS: 30000 } };
+/* const option = { socketOptions: { keepAlive: 1, connectTimeoutMS: 30000 } };
 
 mongoose.Promise = Promise;
-// mongoose.connect(config.DBHost, { server: option, replset: option });
-// const db = mongoose.connection;
-// db.on('error', console.error.bind(console, 'connection error:'));
+mongoose.connect(config.DBHost, { server: option, replset: option });
+const db = mongoose.connection;
+db.on('error', console.error.bind(console, 'connection error:'));*/
 
 const app = express();
 app.use(cors({ exposedHeaders: ['Link'] }));
-if (config.util.getEnv('NODE_ENV') !== 'test') app.use(morgan('combined'));
+// if (config.util.getEnv('NODE_ENV') !== 'test') app.use(morgan('combined'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.text());
@@ -257,6 +259,11 @@ const SVG = {
   },
 };
 
+const json = res => (err, data) => res[err ? 'send' : 'json'](err || data);
+
+app.route('/game').get((req, res) => res.sendFile(`${__dirname}/game/index.html`));
+app.route('/game/:filename').get((req, res) => res.sendFile(`${__dirname}/game/${req.params.filename}`));
+
 app.route('/talen').get(ListTalen);
 app.route('/gewesten').get(ListGewesten);
 app.route('/gewest/:GewestId/:TaalCode').get(GetGewestByGewestIdAndTaalCode);
@@ -272,7 +279,6 @@ app.route('/wegobjecten/:StraatnaamId').get(ListWegobjectenByStraatnaamId);
 app.route('/wegobjecten/:StraatnaamId/*').get(wegobjectenByStraat);
 app.route('/wegobject/:IdentificatorWegobject').get(GetWegobjectByIdentificatorWegobject);
 app.route('/image/wegobjecten/:StraatnaamId/*').get(GRBImage.wegobjecten);
-// app.route('/image/wegobject/:IdentificatorWegobject').get(GRBImage.wegobject);
 app.route('/wegsegmenten/:StraatnaamId').get(ListWegsegmentenByStraatnaamId);
 app.route('/wegsegmenten/:StraatnaamId/*').get(wegsegmentenByStraat);
 app.route('/wegsegment/:IdentificatorWegsegment').get(GetWegsegmentByIdentificatorWegsegment);
@@ -285,6 +291,11 @@ app.route('/gebouwen/:HuisnummerId').get(ListGebouwenByHuisnummerId);
 app.route('/gebouw/:IdentificatorGebouw').get(GetGebouwByIdentificatorGebouw);
 app.route('/percelen/:HuisnummerId').get(ListPercelenByHuisnummerId);
 app.route('/perceel/:IdentificatorPerceel1/:IdentificatorPerceel2').get(GetPerceelByIdentificatorPerceel);
+
+app.route('/api/wegbanen')
+  .get((req, res) => Wegbaan.find().exec(json(res)));
+app.route('/api/wegbanen/:straatId')
+  .get(({ params: { straatId } }, res) => Wegbaan.find({ straatId }).exec(json(res)));
 
 app.listen(PORT);
 console.log(`Listening on port ${PORT}`);

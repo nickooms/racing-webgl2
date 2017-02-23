@@ -3,6 +3,7 @@ const Canvas = require('canvas');
 const earcut = require('earcut');
 const fs = require('fs');
 
+const db = require('./db');
 const { list, object } = require('./app/lib/crab');
 const MarchingSquares = require('./MarchingSquares');
 const { compose } = require('./functional');
@@ -14,6 +15,7 @@ const simplify = require('./simplify');
 const Random = require('./Random');
 const { query } = require('./WMS');
 const BBOX = require('./BBOX');
+const Wegbaan = require('./models/Wegbaan');
 
 const SorteerVeld = 0;
 
@@ -101,10 +103,17 @@ const getLayer = ({ width = SIZE, height = SIZE, bbox }) =>
   .then(({ img }) => new GRBCanvas(width, height, bbox, img));
 
 const GRBImage = {
-  wegbaan: ({ params: { StraatnaamId: id } }, res) => {
-    wegbaanByStraat(id)
+  wegbaan: ({ params: { StraatnaamId: straatId } }, res) => {
+    wegbaanByStraat(straatId)
     .then(([wegsegmenten, wegobjecten]) => {
       const canvasList = [];
+      const ids = new Map();
+      wegsegmenten.forEach(wegsegment => {
+        wegsegment.geometrie.lineString.forEach(point => ids.set(point, { type: 'Wegsegment', id: wegsegment.id }));
+      });
+      wegobjecten.forEach(wegobject => {
+        ids.set(wegobject.center, { type: 'Wegobject', id: wegobject.id });
+      });
       const coordinates = flatten([lineStrings(wegsegmenten), centers(wegobjecten)]);
       const bbox = new BBOX(coordinates);
       const width = SIZE;
@@ -112,10 +121,10 @@ const GRBImage = {
       getLayer({ width, height, bbox })
       .then((canvas) => {
         canvasList.push(canvas);
-        const result = [];
         Promise.all(coordinates.map((coordinate) => {
           const fill = canvas.flood(coordinate);
           if (fill) {
+            const { id, type } = ids.get(coordinate);
             const { bboxDetail } = fill;
             bboxDetail.grow(parseInt((bboxDetail.width + bboxDetail.height) / 20, 10));
             return getLayer({ width: SIZE, height: SIZE, bbox: bboxDetail })
@@ -136,47 +145,38 @@ const GRBImage = {
                   [float3((mid.x - x)), 0, float3((mid.y - y))]);
                 const triangles = earcut(flatten(vertices));
                 const ctx = fillCanvas.ctx;
-                const indices = [];
+                // const indices = [];
                 for (let i = triangles.length; i;) {
                   ctx.beginPath();
-                  const index = [];
+                  // const index = [];
                   for (let j = 0; j < 3; j++) {
                     --i;
                     const triangle = triangles[i];
                     ctx.moveTo(vertices[triangle][0], vertices[triangle][1]);
-                    index.push(triangles[i]);
+                    // index.push(triangles[i]);
                   }
-                  indices.push(index);
+                  // indices.push(index);
                   ctx.closePath();
                   ctx.stroke();
                 }
                 const obj = {
+                  type,
+                  straatId,
                   position: flatten(centeredCoords),
                   center: [float3(mid.x),float3(mid.y)],
                   normal: flatten(coords.concat([null, null]).map(() => [0, 1, 0])),
                   texcoord: flatten(coords.map(() => [0, 0])),
                   indices: flatten(triangles),
-                }
-                result.push(obj);
+                };
+                Wegbaan.findOneAndUpdate({ id }, obj, { upsert: true, new: true })
+                .then(({ type, id }) => console.log(`Added ${type} ${id}`))
+                .catch(error);
               }
               return detailCanvas;
             });
           }
           return Promise.resolve(null);
         }))
-        // .then(getCorners)
-        // .then(log)
-        .then(() => {
-          let json = JSON.stringify(result);
-          const names = ['position', 'center', 'normal', 'texcoord', 'indices'];
-          names.forEach(x => json = json.split(`"${x}":`).join(`\n  ${x}: `));
-          json = json
-            .replace('[{', '[{')
-            .replace(']}]', ']\n}]')
-            .split('},{')
-            .join('\n}, {');
-          console.log(json);
-        })
         .then(() => res.send(canvasListToHTML(canvasList)));
       })
       .catch(error);
