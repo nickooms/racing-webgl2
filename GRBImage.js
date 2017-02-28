@@ -1,31 +1,25 @@
-// const format = require('fmt-obj');
+const format = require('fmt-obj');
 const Canvas = require('canvas');
 const earcut = require('earcut');
+const fetch = require('node-fetch');
 const fs = require('fs');
 
-const db = require('./db');
 const { list, object } = require('./app/lib/crab');
 const MarchingSquares = require('./MarchingSquares');
-const { compose } = require('./functional');
-// const GeoCanvas = require('./GeoCanvas');
+const { compose, flatten } = require('./functional');
+const Wegbaan = require('./models/Wegbaan');
 const GRBCanvas = require('./GRBCanvas');
-// const Delaunay = require('./Delaunay');
-// const floodfill = require('./floodfill');
 const simplify = require('./simplify');
 const Random = require('./Random');
 const { query } = require('./WMS');
 const BBOX = require('./BBOX');
-const Wegbaan = require('./models/Wegbaan');
+// const db = require('./db');
 
 const SorteerVeld = 0;
 
 const Image = Canvas.Image;
 
 const error = e => console.error(e);
-
-const flatten = a =>
-  a.reduce((arr, obj) =>
-    arr.concat(Array.isArray(obj) ? flatten(obj) : obj), []);
 
 const wegsegmentById = id =>
   object('GetWegsegmentByIdentificatorWegsegment', { IdentificatorWegsegment: id });
@@ -76,23 +70,15 @@ const pixel = canvas => bbox => ({ x, y }) => {
 const coordinatesToPixels = (canvas, bbox, coordinates) =>
   coordinates.map(pixel(canvas)(bbox));
 
-// const hasCorners = x => x && x.length;
-
-// const onlyCorners = x => x.filter(hasCorners);
-
 const prop = name => x => x[name];
 
-// const length = prop('length');
-const center = prop('center');
+// const center = prop('center');
 const geometrie = prop('geometrie');
 
-// const getCorners = x => onlyCorners(x).map(length);
 const lineString = compose(prop('lineString'), geometrie);
 
-const centers = x => x.map(center);
+const centers = x => x.map(prop('center'));
 const lineStrings = x => x.map(lineString);
-
-// const log = x => console.log(format(x));
 
 const SIZE = 1000;
 
@@ -102,19 +88,54 @@ const getLayer = ({ width = SIZE, height = SIZE, bbox }) =>
   query({ width, height, bbox })
   .then(({ img }) => new GRBCanvas(width, height, bbox, img));
 
+const getFeatureInfo = ({ width, height, bbox, x, y }) => {
+  const url = 'http://geoservices.informatievlaanderen.be/raadpleegdiensten/GRB/wms';
+  const params = {
+    SERVICE: 'WMS',
+    REQUEST: 'GetFeatureInfo',
+    FORMAT: 'image/png',
+    TRANSPARENT: 'TRUE',
+    STYLES: 'GRB_WBN',
+    VERSION: '1.3.0',
+    LAYERS: 'GRB_WBN',
+    WIDTH: width,
+    HEIGHT: height,
+    // CRS: 'EPSG:3857',
+    CRS: 'EPSG:31370',
+    BBOX: [
+      bbox.min.x, // 490292.79086267675,
+      bbox.min.y, // 6675608.460021957,
+      bbox.max.x, // 490531.65657606855,
+      bbox.max.y, // 6675690.868693077,
+    ].join(','),
+    INFO_FORMAT: 'application/json',
+    QUERY_LAYERS: 'GRB_WBN',
+    FEATURE_COUNT: 10,
+    I: x,
+    J: y,
+  };
+  const qs = Object.entries(params)
+  .map(([key, value]) => `${key}=${value}`)
+  .join('&');
+  return fetch(`${url}?${qs}`);
+};
+
 const GRBImage = {
   wegbaan: ({ params: { StraatnaamId: straatId } }, res) => {
+    console.log(`wegbaan ${straatId}`);
     wegbaanByStraat(straatId)
     .then(([wegsegmenten, wegobjecten]) => {
       const canvasList = [];
-      const ids = new Map();
-      wegsegmenten.forEach(wegsegment => {
-        wegsegment.geometrie.lineString.forEach(point => ids.set(point, { type: 'Wegsegment', id: wegsegment.id }));
+      /* const ids = new Map();
+      wegsegmenten.forEach((wegsegment) => {
+        wegsegment.geometrie.lineString.forEach(point =>
+          ids.set(point, { type: 'Wegsegment', id: wegsegment.id }));
       });
-      wegobjecten.forEach(wegobject => {
+      wegobjecten.forEach((wegobject) => {
         ids.set(wegobject.center, { type: 'Wegobject', id: wegobject.id });
-      });
+      });*/
       const coordinates = flatten([lineStrings(wegsegmenten), centers(wegobjecten)]);
+      // console.log(`coordinates => ${format(coordinates)}`);
       const bbox = new BBOX(coordinates);
       const width = SIZE;
       const height = SIZE;
@@ -122,18 +143,83 @@ const GRBImage = {
       .then((canvas) => {
         canvasList.push(canvas);
         Promise.all(coordinates.map((coordinate) => {
-          const fill = canvas.flood(coordinate);
+          // console.log(`coordinate => ${format(coordinate)}`);
+          const fill = canvas.flood(coordinate, [GRBCanvas.Red, GRBCanvas.Green]);
           if (fill) {
-            const { id, type } = ids.get(coordinate);
             const { bboxDetail } = fill;
             bboxDetail.grow(parseInt((bboxDetail.width + bboxDetail.height) / 20, 10));
             return getLayer({ width: SIZE, height: SIZE, bbox: bboxDetail })
             .then((detailCanvas) => {
-              const detailFilled = detailCanvas.flood(coordinate);
+              const detailFilled = detailCanvas.flood(coordinate, [GRBCanvas.Red, GRBCanvas.Green]);
               if (detailFilled) {
                 const { fillCanvas } = detailFilled;
                 canvasList.push(fillCanvas);
-                const border = MarchingSquares.getBlobOutlinePoints(fillCanvas);
+                const px = detailCanvas.pixel(coordinate);
+                getFeatureInfo({
+                  width: detailCanvas.width,
+                  height: detailCanvas.height,
+                  bbox: bboxDetail,
+                  x: px.x,
+                  y: px.y,
+                })
+                .then(response => response.json())
+                .then(({ features: [feature] }) => {
+                  const { geometry, properties } = feature;
+                  const id = feature.id.split('.')[1];
+                  const border = MarchingSquares.getBlobOutlinePoints(fillCanvas);
+                  const corners = simplify(border, 1.5);
+                  /* const vertices = geometry.coordinates[0]
+                    .map(([x, y]) => ({ x, y }))
+                    .map(c => fillCanvas.pixel(c))
+                    .map(({ x, y }) => [x, y]);*/
+                  const vertices = corners.map(({ x, y }) => [x, y]);
+                  // console.log('geometry');
+                  /* console.log(geometry.coordinates[0]
+                    .map(([x, y]) => ({ x, y }))
+                    .map(c => fillCanvas.pixel(c))
+                    .map(({ x, y }) => [x, y]));
+                  console.log('vertices');
+                  console.log(vertices);*/
+                  const coords = corners
+                    .map(corner => fillCanvas.coordinate(corner))
+                    .map(({ x, y }) => [float3(x), float3(y)]);
+                  const bboxCoords = new BBOX(corners.map(corner => fillCanvas.coordinate(corner)));
+                  const { center: mid } = bboxCoords;
+                  const centeredCoords = coords.concat([coords[0]]).map(([x, y]) =>
+                    [float3((mid.x - x)), 0, float3((mid.y - y))]);
+                  const position = flatten(centeredCoords);
+                  const center = [float3(mid.x), float3(mid.y)];
+                  const normal = flatten(coords.concat([null, null]).map(() => [0, 1, 0]));
+                  const texcoord = flatten(coords.map(() => [0, 0]));
+                  const triangles = earcut(flatten(vertices));
+                  const indices = flatten(triangles);
+                  const ctx = fillCanvas.ctx;
+                  for (let i = triangles.length; i;) {
+                    ctx.beginPath();
+                    for (let j = 0; j < 3; j++) {
+                      --i;
+                      const triangle = triangles[i];
+                      ctx.moveTo(vertices[triangle][0], vertices[triangle][1]);
+                    }
+                    ctx.closePath();
+                    ctx.stroke();
+                  }
+                  const type = properties.LBLTYPE;
+                  const obj = {
+                    type,
+                    straatId,
+                    position/* : flatten(centeredCoords)*/,
+                    center/* : [float3(mid.x), float3(mid.y)]*/,
+                    normal/* : flatten(coords.concat([null, null]).map(() => [0, 1, 0]))*/,
+                    texcoord/* : flatten(coords.map(() => [0, 0]))*/,
+                    indices/* : flatten(triangles)*/,
+                  };
+                  Wegbaan.findOneAndUpdate({ id }, obj, { upsert: true, new: true })
+                  .then(wegbaan => console.log(`Added ${wegbaan.type} ${wegbaan.id}`))
+                  .catch(error);
+                })
+                .catch(e => console.error(e));
+                /* const border = MarchingSquares.getBlobOutlinePoints(fillCanvas);
                 const corners = simplify(border, 1.5);
                 const vertices = corners.map(({ x, y }) => [x, y]);
                 const coords = corners
@@ -145,42 +231,42 @@ const GRBImage = {
                   [float3((mid.x - x)), 0, float3((mid.y - y))]);
                 const triangles = earcut(flatten(vertices));
                 const ctx = fillCanvas.ctx;
-                // const indices = [];
                 for (let i = triangles.length; i;) {
                   ctx.beginPath();
-                  // const index = [];
                   for (let j = 0; j < 3; j++) {
                     --i;
                     const triangle = triangles[i];
                     ctx.moveTo(vertices[triangle][0], vertices[triangle][1]);
-                    // index.push(triangles[i]);
                   }
-                  // indices.push(index);
                   ctx.closePath();
                   ctx.stroke();
-                }
-                const obj = {
+                }*/
+                // const { id, type } = ids.get(coordinate);
+                /* const obj = {
                   type,
                   straatId,
                   position: flatten(centeredCoords),
-                  center: [float3(mid.x),float3(mid.y)],
+                  center: [float3(mid.x), float3(mid.y)],
                   normal: flatten(coords.concat([null, null]).map(() => [0, 1, 0])),
                   texcoord: flatten(coords.map(() => [0, 0])),
                   indices: flatten(triangles),
                 };
                 Wegbaan.findOneAndUpdate({ id }, obj, { upsert: true, new: true })
-                .then(({ type, id }) => console.log(`Added ${type} ${id}`))
-                .catch(error);
+                .then(wegbaan => console.log(`Added ${wegbaan.type} ${wegbaan.id}`))
+                .catch(error);*/
               }
               return detailCanvas;
-            });
+            })
+            .catch(error);
           }
           return Promise.resolve(null);
         }))
-        .then(() => res.send(canvasListToHTML(canvasList)));
+        .then(() => res.send(canvasListToHTML(canvasList)))
+        .catch(error);
       })
       .catch(error);
-    });
+    })
+    .catch(error);
   },
   wegsegmenten: ({ params: { StraatnaamId } }, res) => {
     list('ListWegsegmentenByStraatnaamId', { StraatnaamId, SorteerVeld })

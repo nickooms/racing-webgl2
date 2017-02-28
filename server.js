@@ -1,33 +1,25 @@
 const bodyParser = require('body-parser');
-const mongoose = require('mongoose');
+// const mongoose = require('mongoose');
 const express = require('express');
-const morgan = require('morgan');
-const config = require('config');
-// const Canvas = require('canvas');
+// const morgan = require('morgan');
+// const config = require('config');
 const cors = require('cors');
-// const fs = require('fs');
-const db = require('./db');
-// const floodfill = require('./floodfill');
-// const GeoCanvas = require('./GeoCanvas');
-const GRBImage = require('./GRBImage');
-// const MarchingSquares = require('./MarchingSquares');
-const Objects = require('./app/routes');
 
-const Wegbaan = require('./models/Wegbaan');
-// const simplify = require('./simplify');
-// const Random = require('./Random');
-// const BBOX = require('./BBOX');
-// const { query } = require('./WMS');
-// const Image = Canvas.Image;
+const { list, object } = require('./app/lib/crab');
+// const GRBImage = require('./GRBImage');
+const Objects = require('./app/routes');
+const imageRoutes = require('./image');
+const apiRoutes = require('./api');
+// const db = require('./db');
+
 const SorteerVeld = 0;
+
 const { taal, gewest, gemeente, straat, huisnummer, wegobject,
   wegsegment, terreinobject, gebouw, perceel } = Objects;
 
-const { list, object/* , dir*/ } = require('./app/lib/crab');
-
 const operations = objects => Object.entries(objects)
   .map(([objectName, obj]) => ({
-    [objectName]: Object.entries(obj).map(([operationName/* , operation*/]) => operationName),
+    [objectName]: Object.entries(obj).map(([operationName]) => operationName),
   })).reduce((result, obj) => Object.assign(result, obj), {});
 
 const {
@@ -80,12 +72,6 @@ const {
 } = perceel;
 
 const PORT = 8080;
-/* const option = { socketOptions: { keepAlive: 1, connectTimeoutMS: 30000 } };
-
-mongoose.Promise = Promise;
-mongoose.connect(config.DBHost, { server: option, replset: option });
-const db = mongoose.connection;
-db.on('error', console.error.bind(console, 'connection error:'));*/
 
 const app = express();
 app.use(cors({ exposedHeaders: ['Link'] }));
@@ -141,9 +127,6 @@ const gebouwenByHuisnummers = huisnummers => Promise.all(huisnummers
   .catch(error))
 .catch(error);
 
-/* const huisnummersByStraat = StraatnaamId =>
-  list('ListHuisnummersByStraatnaamId', { StraatnaamId, SorteerVeld });*/
-
 const wegsegmentById = id => object('GetWegsegmentByIdentificatorWegsegment', { IdentificatorWegsegment: id });
 
 const wegobjectById = id => object('GetWegobjectByIdentificatorWegobject', { IdentificatorWegobject: id });
@@ -159,21 +142,6 @@ const wegobjectenByStraat = ({ params: { StraatnaamId } }, res) => {
     .then(array => Promise.all(array.map(({ id }) => wegobjectById(id)))
       .then(result => res.send(JSON.stringify(result, null, 2))));
 };
-
-/* const wegbaanByStraat = StraatnaamId => {
-  const parameters = { StraatnaamId, SorteerVeld };
-  return Promise.all([
-    list('ListWegsegmentenByStraatnaamId', parameters),
-    list('ListWegobjectenByStraatnaamId', parameters)
-  ]).then(([wegsegmentenList, wegobjectenList]) => {
-    return Promise.all([
-      Promise.all(wegsegmentenList.map(({ id }) => wegsegmentById(id))),
-      Promise.all(wegobjectenList.map(({ id }) => wegobjectById(id)))
-    ]).then(([wegsegmentenDetails, wegobjectenDetails]) => [
-      wegsegmentenDetails, wegobjectenDetails
-    ]);
-  });
-};*/
 
 const SVG = {
   straat: ({ params: { StraatnaamId } }, res) => {
@@ -199,7 +167,6 @@ const SVG = {
         const width = (max.x - min.x).toFixed(3);
         const height = (max.y - min.y).toFixed(3);
         terreinen.forEach(({ id/* , bounds*/ }) => {
-          // const { min, max } = bounds;
           const points = [min, { x: min.x, y: max.y }, max, { x: max.x, y: min.y }].map(({ x, y }) => [x, y].map(v => v.toFixed(3)).join(',')).join(' ');
           objects.push(`<polygon id="${id}" points="${points}" stroke="gray" stroke-width="0.1" fill="gray" fill-opacity="${0.1}" />`);
         });
@@ -238,8 +205,7 @@ const SVG = {
       });
       const width = (max.x - min.x).toFixed(3);
       const height = (max.y - min.y).toFixed(3);
-      terreinen.forEach(({ id/* , bounds*/ }) => {
-        // const { min, max } = bounds;
+      terreinen.forEach(({ id }) => {
         const points = [min, { x: min.x, y: max.y }, max, { x: max.x, y: min.y }].map(({ x, y }) => [x, y].map(v => v.toFixed(3)).join(',')).join(' ');
         objects.push(`<polygon id="${id}" points="${points}" stroke="gray" stroke-width="0.1" fill="gray" fill-opacity="${0.1}" />`);
       });
@@ -259,43 +225,79 @@ const SVG = {
   },
 };
 
-const json = res => (err, data) => res[err ? 'send' : 'json'](err || data);
+app.route('/game')
+  .get((req, res) => res.sendFile(`${__dirname}/game/index.html`));
+app.route('/game/:filename')
+  .get((req, res) => res.sendFile(`${__dirname}/game/${req.params.filename}`));
 
-app.route('/game').get((req, res) => res.sendFile(`${__dirname}/game/index.html`));
-app.route('/game/:filename').get((req, res) => res.sendFile(`${__dirname}/game/${req.params.filename}`));
+app.route('/talen')
+  .get(ListTalen);
 
-app.route('/talen').get(ListTalen);
-app.route('/gewesten').get(ListGewesten);
-app.route('/gewest/:GewestId/:TaalCode').get(GetGewestByGewestIdAndTaalCode);
-app.route('/gemeenten/:GewestId').get(ListGemeentenByGewestId);
-app.route('/gemeente/:GemeenteId').get(GetGemeenteByGemeenteId);
-app.route('/straten/:GemeenteId').get(ListStraatnamenByGemeenteId);
-app.route('/straat/:StraatnaamId').get(GetStraatnaamByStraatnaamId);
-app.route('/svg/straat/:StraatnaamId').get(SVG.straat);
-app.route('/huisnummers/:StraatnaamId').get(ListHuisnummersByStraatnaamId);
-app.route('/huisnummer/:HuisnummerId').get(GetHuisnummerByHuisnummerId);
-app.route('/svg/huisnummer/:HuisnummerId').get(SVG.huisnummer);
-app.route('/wegobjecten/:StraatnaamId').get(ListWegobjectenByStraatnaamId);
-app.route('/wegobjecten/:StraatnaamId/*').get(wegobjectenByStraat);
-app.route('/wegobject/:IdentificatorWegobject').get(GetWegobjectByIdentificatorWegobject);
-app.route('/image/wegobjecten/:StraatnaamId/*').get(GRBImage.wegobjecten);
-app.route('/wegsegmenten/:StraatnaamId').get(ListWegsegmentenByStraatnaamId);
-app.route('/wegsegmenten/:StraatnaamId/*').get(wegsegmentenByStraat);
-app.route('/wegsegment/:IdentificatorWegsegment').get(GetWegsegmentByIdentificatorWegsegment);
-app.route('/image/wegsegment/:IdentificatorWegsegment').get(GRBImage.wegsegment);
-app.route('/image/wegsegmenten/:StraatnaamId/*').get(GRBImage.wegsegmenten);
-app.route('/image/wegbaan/:StraatnaamId').get(GRBImage.wegbaan);
-app.route('/terreinobjecten/:HuisnummerId').get(ListTerreinobjectenByHuisnummerId);
-app.route('/terreinobject/:IdentificatorTerreinobject').get(GetTerreinobjectByIdentificatorTerreinobject);
-app.route('/gebouwen/:HuisnummerId').get(ListGebouwenByHuisnummerId);
-app.route('/gebouw/:IdentificatorGebouw').get(GetGebouwByIdentificatorGebouw);
-app.route('/percelen/:HuisnummerId').get(ListPercelenByHuisnummerId);
-app.route('/perceel/:IdentificatorPerceel1/:IdentificatorPerceel2').get(GetPerceelByIdentificatorPerceel);
+app.route('/gewesten')
+  .get(ListGewesten);
+app.route('/gewest/:GewestId/:TaalCode')
+  .get(GetGewestByGewestIdAndTaalCode);
 
-app.route('/api/wegbanen')
-  .get((req, res) => Wegbaan.find().exec(json(res)));
-app.route('/api/wegbanen/:straatId')
-  .get(({ params: { straatId } }, res) => Wegbaan.find({ straatId }).exec(json(res)));
+app.route('/gemeenten/:GewestId')
+  .get(ListGemeentenByGewestId);
+app.route('/gemeente/:GemeenteId')
+  .get(GetGemeenteByGemeenteId);
+
+app.route('/straten/:GemeenteId')
+  .get(ListStraatnamenByGemeenteId);
+app.route('/straat/:StraatnaamId')
+  .get(GetStraatnaamByStraatnaamId);
+
+app.route('/huisnummers/:StraatnaamId')
+  .get(ListHuisnummersByStraatnaamId);
+app.route('/huisnummer/:HuisnummerId')
+  .get(GetHuisnummerByHuisnummerId);
+
+app.route('/wegobjecten/:StraatnaamId')
+  .get(ListWegobjectenByStraatnaamId);
+app.route('/wegobjecten/:StraatnaamId/*')
+  .get(wegobjectenByStraat);
+app.route('/wegobject/:IdentificatorWegobject')
+  .get(GetWegobjectByIdentificatorWegobject);
+
+app.route('/wegsegmenten/:StraatnaamId')
+  .get(ListWegsegmentenByStraatnaamId);
+app.route('/wegsegmenten/:StraatnaamId/*')
+  .get(wegsegmentenByStraat);
+app.route('/wegsegment/:IdentificatorWegsegment')
+  .get(GetWegsegmentByIdentificatorWegsegment);
+
+app.route('/terreinobjecten/:HuisnummerId')
+  .get(ListTerreinobjectenByHuisnummerId);
+app.route('/terreinobject/:IdentificatorTerreinobject')
+  .get(GetTerreinobjectByIdentificatorTerreinobject);
+
+app.route('/gebouwen/:HuisnummerId')
+  .get(ListGebouwenByHuisnummerId);
+app.route('/gebouw/:IdentificatorGebouw')
+  .get(GetGebouwByIdentificatorGebouw);
+
+app.route('/percelen/:HuisnummerId')
+  .get(ListPercelenByHuisnummerId);
+app.route('/perceel/:IdentificatorPerceel1/:IdentificatorPerceel2')
+  .get(GetPerceelByIdentificatorPerceel);
+
+app.route('/svg/straat/:StraatnaamId')
+  .get(SVG.straat);
+app.route('/svg/huisnummer/:HuisnummerId')
+  .get(SVG.huisnummer);
+
+/* app.route('/image/wegobjecten/:StraatnaamId/*')
+  .get(GRBImage.wegobjecten);
+app.route('/image/wegsegment/:IdentificatorWegsegment')
+  .get(GRBImage.wegsegment);
+app.route('/image/wegsegmenten/:StraatnaamId/*')
+  .get(GRBImage.wegsegmenten);
+app.route('/image/wegbaan/:StraatnaamId')
+  .get(GRBImage.wegbaan);*/
+imageRoutes(app);
+
+apiRoutes(app);
 
 app.listen(PORT);
 console.log(`Listening on port ${PORT}`);
