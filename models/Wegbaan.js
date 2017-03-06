@@ -1,7 +1,8 @@
-let mongoose = require('mongoose');
-let Schema = mongoose.Schema;
+const mongoose = require('mongoose');
 
-let WegbaanSchema = new Schema({
+const { Schema } = mongoose;
+
+const WegbaanSchema = new Schema({
   id: { type: Number, required: true },
   type: { type: String, required: true },
   straatId: { type: Number, required: true },
@@ -12,13 +13,14 @@ let WegbaanSchema = new Schema({
   indices: { type: Array, required: true },
   createdAt: { type: Date, default: Date.now },
 }, {
-  versionKey: false
+  versionKey: false,
+  collection: 'wegbaan',
 });
 
-WegbaanSchema.pre('save', next => {
-  now = new Date();
+WegbaanSchema.pre('save', (next) => {
+  const now = new Date();
   if (!this.createdAt) this.createdAt = now;
   next();
 });
 
-module.exports = mongoose.model('wegbaan', WegbaanSchema);
+module.exports = mongoose.model('Wegbaan', WegbaanSchema);

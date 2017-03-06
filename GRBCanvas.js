@@ -1,9 +1,7 @@
-// const format = require('fmt-obj');
-
 const floodfill = require('./floodfill');
 const GeoCanvas = require('./GeoCanvas');
-const { hex } = require('./Color');
 const BBOX = require('./BBOX');
+const { getFeatureInfo } = require('./WMS');
 
 const WHITE = 0xffffff;
 const RED = 0x0000ff;
@@ -14,23 +12,11 @@ const DARK_GRAY = 0xb7b7b7;
 const Red = { fill: 0xff0000ff, colors: [DARK_GRAY, RED] };
 const Green = { fill: 0xff00ff00, colors: [LIGHT_GRAY, GREEN] };
 
-const log = x => Object.keys(x).map(k => console.log(`${k} => ${x[k]}`));
-
-const logHex = x => Object.keys(x).map(k => console.log(`${k} => ${hex(x[k])}`));
-
 class GRBCanvas extends GeoCanvas {
   static fillColor(color, matchColors) {
-    /* log(`matchColors => ${matchColors.map(x =>
-      `{ fill: ${hex(x.fill)} }`)}`);*/
-    // log({ matchColors });
     const rgb = color & WHITE;
-    // log(`rgb => ${hex(rgb)}`);
-    // logHex({ rgb });
     const filtered = matchColors.filter(({ colors }) => colors.indexOf(rgb) !== -1);
-    const result = filtered && filtered.length && filtered[0].fill;
-    // log(`fillColor => ${result}`);
-    // logHex({ result });
-    return result;
+    return filtered && filtered.length && filtered[0].fill;
   }
 
   flood(coordinate, fillColors = [Red, Green]) {
@@ -50,16 +36,19 @@ class GRBCanvas extends GeoCanvas {
     }
     return null;
   }
+
+  featureInfo(layers, pixel) {
+    return getFeatureInfo({
+      width: this.width,
+      height: this.height,
+      layers,
+      bbox: this.bbox,
+      x: pixel.x,
+      y: pixel.y,
+    });
+  }
 }
 
-Object.assign(GRBCanvas, {
-  WHITE,
-  RED,
-  GREEN,
-  LIGHT_GRAY,
-  DARK_GRAY,
-  Red,
-  Green,
-});
+Object.assign(GRBCanvas, { WHITE, RED, GREEN, LIGHT_GRAY, DARK_GRAY, Red, Green });
 
 module.exports = GRBCanvas;

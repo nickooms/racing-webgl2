@@ -63,7 +63,7 @@ module.exports = class extends Canvas {
     ctx.beginPath();
     Object.assign(ctx, {
       lineWidth: 5,
-      strokeStyle: 'rgba(0, 0, 0, 0.5)'
+      strokeStyle: 'rgba(0, 0, 0, 0.5)',
     });
     corners.forEach(({ x, y }, i) => ctx[i === 0 ? 'moveTo' : 'lineTo'](x, y));
     ctx.stroke();

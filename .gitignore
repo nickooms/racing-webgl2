@@ -2,4 +2,8 @@
 /logs
 /npm-debug.log
 /node_modules
+/_node_modules
+cache
+/_
 .DS_Store
+cache/**.json
