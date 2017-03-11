@@ -8,9 +8,11 @@ const RED = 0x0000ff;
 const GREEN = 0x00ff00;
 const LIGHT_GRAY = 0xcccccc;
 const DARK_GRAY = 0xb7b7b7;
+const PERCEEL = 0xc8f5ff;
 
 const Red = { fill: 0xff0000ff, colors: [DARK_GRAY, RED] };
 const Green = { fill: 0xff00ff00, colors: [LIGHT_GRAY, GREEN] };
+const Perceel = { fill: 0xffff0000, colors: [PERCEEL] };
 
 class GRBCanvas extends GeoCanvas {
   static fillColor(color, matchColors) {
@@ -49,6 +51,16 @@ class GRBCanvas extends GeoCanvas {
   }
 }
 
-Object.assign(GRBCanvas, { WHITE, RED, GREEN, LIGHT_GRAY, DARK_GRAY, Red, Green });
+Object.assign(GRBCanvas, {
+  WHITE,
+  RED,
+  GREEN,
+  LIGHT_GRAY,
+  DARK_GRAY,
+  PERCEEL,
+  Red,
+  Green,
+  Perceel,
+});
 
 module.exports = GRBCanvas;

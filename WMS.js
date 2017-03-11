@@ -14,8 +14,10 @@ const PARAMS = {
   VERSION: '1.3.0',
   CRS: 'EPSG:31370',
 };
+const base = 'cache/WMS';
 const caches = {
-  GetFeatureInfo: new Cache({ base: 'cache/WMS', name: 'GetFeatureInfo' }),
+  GetFeatureInfo: new Cache({ base, name: 'GetFeatureInfo' }),
+  GetMap: new Cache({ base, name: 'GetMap' }),
 };
 
 const keyValue = ([key, value]) => `${key}=${value}`;
@@ -25,28 +27,50 @@ const boundingBox = ({ min, max }) => [min.x, min.y, max.x, max.y].map(float3).j
 const qs = params => Object.entries(params).map(keyValue).join('&');
 
 const WMS = {
-  query({ width, height, layers = 'GRB_WBN', bbox: { min, max } }) {
+  query: async ({
+    width,
+    height,
+    layers = 'GRB_WBN',
+    bbox: { min, max },
+  }) => {
+    const REQUEST = 'GetMap';
+    const layerNames = layers instanceof Array ? layers.join(',') : layers;
     const bbox = boundingBox({ min, max });
+    const id = `${layers}-${width}x${height}-${bbox}`;
+    const cache = caches[REQUEST];
+    const cached = await cache.get(id);
     return new Promise((resolve, reject) => {
       const params = Object.assign({}, PARAMS, {
-        REQUEST: 'GetMap',
-        STYLES: layers,
-        layers,
+        REQUEST,
+        STYLES: layerNames,
+        layers: layerNames,
         width,
         height,
         bbox,
       });
       const filename = `./images/${params.bbox}.png`;
+      const image = new Image();
+      image.onerror = e => reject(e);
+      image.onload = () => resolve({ img: image, filename });
+      if (cached) {
+        image.src = new Buffer(cached, 'binary');
+        return;
+      }
       request.get({ url: `${URL}?${qs(params)}`, encoding: null }, (err, res, body) => {
         if (err) reject(err);
-        const image = new Image();
-        image.onerror = e => reject(e);
-        image.onload = () => resolve({ img: image, filename });
+        cache.put(id, body);
         image.src = new Buffer(body, 'binary');
       });
     });
   },
-  getFeatureInfo: async ({ layers = 'GRB_WBN', width, height, bbox: { min, max }, x, y }) => {
+  getFeatureInfo: async ({
+    layers = 'GRB_WBN',
+    width,
+    height,
+    bbox: { min, max },
+    x,
+    y,
+  }) => {
     const REQUEST = 'GetFeatureInfo';
     const bbox = boundingBox({ min, max });
     const id = `${layers}-${width}x${height}-${bbox}-${x},${y}`;
@@ -67,9 +91,15 @@ const WMS = {
       J: y,
     });
     const response = await fetch(`${URL}?${qs(params)}`);
-    const obj = await response.json();
-    await cache.put(id, obj);
-    return obj;
+    try {
+      const obj = await response.json();
+      await cache.put(id, obj);
+      return obj;
+    } catch (e) {
+      console.log(e);
+      // for (let a in response) console.log(a);
+      console.log(response._raw.toString());
+    }
   },
 };
 

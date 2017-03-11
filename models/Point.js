@@ -12,6 +12,8 @@ PointSchema.statics.fromArray = ([x, y]) => {
   return new Point({ x, y });
 };
 
+PointSchema.statics.toArray = ({ x, y }) => [x, y];
+
 const Point = mongoose.model('Point', PointSchema);
 
 module.exports = Point;

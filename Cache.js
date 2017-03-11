@@ -1,7 +1,12 @@
 const persistentCache = require('persistent-cache');
-const { color: { green, blue, cyan, close } } = require('ansi-styles');
+const { bold, magenta, yellow, green, gray, blue, cyan } = require('./Logging');
 
 const cacheSymbol = Symbol('cache');
+
+const genId = query => JSON.stringify(query)
+  .replace(/\{|\}|"/g, '')
+  .replace(/:/g, '=')
+  .replace(/\//g, '_');
 
 class Cache {
   constructor({ base = 'cache', name = 'cache', logging = true } = {}) {
@@ -15,9 +20,21 @@ class Cache {
       const path = base
         .replace(/cache\//g, '')
         .replace(/\//g, ' ');
-      const action = `${blue.open}Cache${close} ${operation}`;
-      const cacheName = `${cyan.open}[${path} ${name}]${close}`;
-      console.log(`${action} ${cacheName} ${green.open}${id}${close}`);
+      const action = `${cyan('[Cache]')} ${gray(operation)}`;
+      let cacheName;
+      let params;
+      if (typeof id === 'string') {
+        cacheName = blue(`[${path} ${name}]`);
+        params = green(id);
+      } else {
+        cacheName = bold(magenta(`[${path}]`));
+        params = `${bold(name)} { ${Object.entries(id).map(([key, value]) => {
+          if (typeof value === 'number') return `${key}: ${yellow(value)}`;
+          if (typeof value === 'string') return `${key}: ${green(`'${value}'`)}`;
+          return `${key}: ${value}`;
+        }).join(', ')} }`;
+      }
+      console.log(`${action} ${cacheName} ${params}`);
     }
   }
 
@@ -34,7 +51,7 @@ class Cache {
     return new Promise((resolve, reject) => {
       this.ids()
       .then((keys) => {
-        const hasKey = keys.includes(key);
+        const hasKey = keys.includes(genId(key));
         resolve(hasKey);
       })
       .catch(err => reject(err));
@@ -43,7 +60,7 @@ class Cache {
 
   get(key) {
     return new Promise((resolve, reject) => {
-      this[cacheSymbol].get(key, (err, result) => {
+      this[cacheSymbol].get(genId(key), (err, result) => {
         if (err) reject(err);
         if (result) this.log('Get', key);
         resolve(result);
@@ -53,7 +70,7 @@ class Cache {
 
   put(key, object) {
     return new Promise((resolve, reject) => {
-      this[cacheSymbol].put(key, object, (err, result) => {
+      this[cacheSymbol].put(genId(key), object, (err, result) => {
         if (err) reject(err);
         this.log('Put', key);
         resolve(result);

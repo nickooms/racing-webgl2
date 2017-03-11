@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+require('../db');
 
 const { Schema } = mongoose;
 
@@ -8,6 +9,7 @@ const WegknoopSchema = new Schema({
   straatId: { type: Number, required: true },
   x: { type: Number, required: true },
   y: { type: Number, required: true },
+  wegverbindingen: [{ type: Schema.Types.ObjectId, ref: 'Wegverbinding' }],
   createdAt: { type: Date, default: Date.now },
 }, {
   versionKey: false,

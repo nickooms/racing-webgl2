@@ -1,13 +1,12 @@
+const Perceel = require('./models/Perceel');
 const Wegbaan = require('./models/Wegbaan');
-const db = require('./db');
+require('./db');
 
 const json = res => (err, data) => res[err ? 'send' : 'json'](err || data);
 
-const { wegbaan } = db.models;
-
 const apiRoutes = (app) => {
   app.route('/api/wegbanen')
-    .get((req, res) => wegbaan.find({})
+    .get((req, res) => Wegbaan.find({})
       .exec(json(res)));
 
   app.route('/api/wegbanen/:delete')
@@ -16,6 +15,10 @@ const apiRoutes = (app) => {
 
   app.route('/api/wegbanen/:straatId')
     .get(({ params: { straatId } }, res) => Wegbaan.find({ straatId })
+      .exec(json(res)));
+
+  app.route('/api/percelen')
+    .get((req, res) => Perceel.find({})
       .exec(json(res)));
 };
 

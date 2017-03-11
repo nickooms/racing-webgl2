@@ -69,4 +69,16 @@ module.exports = class extends Canvas {
     ctx.stroke();
     return this;
   }
+
+  line(points) {
+    const { ctx } = this;
+    ctx.beginPath();
+    Object.assign(ctx, {
+      lineWidth: 5,
+      strokeStyle: 'rgba(0, 0, 0, 0.5)',
+    });
+    points.forEach(({ x, y }, i) => ctx[i === 0 ? 'moveTo' : 'lineTo'](x, y));
+    ctx.stroke();
+    return this;
+  }
 };

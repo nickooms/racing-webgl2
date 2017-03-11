@@ -1,3 +1,4 @@
+// const { color: { red, yellow, green, blue, cyan, close } } = require('ansi-styles');
 const bodyParser = require('body-parser');
 // const mongoose = require('mongoose');
 const express = require('express');
@@ -6,6 +7,7 @@ const express = require('express');
 const cors = require('cors');
 
 const { list, object } = require('./app/lib/crab');
+const { red, yellow, bold } = require('./Logging');
 // const GRBImage = require('./GRBImage');
 const Objects = require('./app/routes');
 const imageRoutes = require('./image');
@@ -287,19 +289,11 @@ app.route('/svg/straat/:StraatnaamId')
 app.route('/svg/huisnummer/:HuisnummerId')
   .get(SVG.huisnummer);
 
-/* app.route('/image/wegobjecten/:StraatnaamId/*')
-  .get(GRBImage.wegobjecten);
-app.route('/image/wegsegment/:IdentificatorWegsegment')
-  .get(GRBImage.wegsegment);
-app.route('/image/wegsegmenten/:StraatnaamId/*')
-  .get(GRBImage.wegsegmenten);
-app.route('/image/wegbaan/:StraatnaamId')
-  .get(GRBImage.wegbaan);*/
 imageRoutes(app);
 
 apiRoutes(app);
 
 app.listen(PORT);
-console.log(`Listening on port ${PORT}`);
+console.log(`${bold(red('Listening on port'))} ${bold(yellow(PORT))}`);
 
 module.exports = app;

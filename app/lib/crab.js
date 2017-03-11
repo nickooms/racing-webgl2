@@ -1,5 +1,6 @@
 const querystring = require('querystring');
 const request = require('request-promise');
+
 const parse = require('../lib/parse');
 const Cache = require('../../Cache');
 
@@ -207,14 +208,22 @@ const toNameValue = object => Object.entries(object)
 const toQuery = object => Object.entries(object)
   .map(([key, value]) => `${key}=${value}`).join('&');
 
+const cacheName = (operation, id) => {
+  const name = operation.split('By');
+  Object.keys(id).forEach((key) => {
+    name[1] = name[1].replace(key, '');
+  });
+  return name.join('');
+};
+
 const list = async (operation, query) => {
-  const id = genId(query);
+  const id = query;
   const handle = (html) => {
     const parsed = parse(html);
     const r = parsed.map(mapping[operation](query));
     return r;
   };
-  const cache = getCache(operation);
+  const cache = getCache(cacheName(operation, id));
   const cached = await cache.get(id);
   if (cached) return cached;
   const parameters = toNameValue(query);
@@ -231,9 +240,9 @@ const list = async (operation, query) => {
 };
 
 const object = async (operation, query) => {
-  const id = genId(query);
+  const id = query;
   const handle = array => (array.length ? array[0] : null);
-  const cache = getCache(operation);
+  const cache = getCache(cacheName(operation, id));
   const cached = await cache.get(id);
   if (cached) return handle(cached);
   const response = await list(operation, query);

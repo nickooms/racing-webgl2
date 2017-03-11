@@ -1,0 +1,32 @@
+General:
+  ☐ mongodb updates weergeven
+  ☐ layers en links layer in browser
+  ☐ optimize sublime text setup
+  ☐ logging overal gebruiken
+--- ✄ -----------------------
+Logging:
+  ✔ TODO sublime text @done (17-03-08 11:39)
+  ✔ TODO file bijwerken @done (17-03-08 11:43)
+  ✔ aparte file @done (17-03-08 14:08)
+  ✔ exports ansi-styles @done (17-03-08 15:11)
+  ✔ usage @done (17-03-08 15:11)
+    ✔ function @done (17-03-08 15:11)
+    ✔ colors
+      ✔ from ansi-styles
+      ✔ tabel
+--- ✄ -----------------------
+Timing:
+  ☐ Log timing
+  ☐ log timing in image routes
+--- ✄ -----------------------
+Routes:
+  ☐ array maken in image routes
+  ☐ aparte file
+  ☐ paths sublevels
+  ☐ logging
+  ☐ routing in server.js
+--- ✄ -----------------------
+Cache:
+  ☐ put in rood ofzo
+  ☐ CRAB log params as object
+--- ✄ -----------------------

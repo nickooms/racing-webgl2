@@ -53,6 +53,7 @@
     "fmt-obj": "^1.1.1",
     "htmlparser2": "^3.9.2",
     "mongoose": "^4.7.7",
+    "mongoose-geojson-schema": "^2.1.2",
     "morgan": "^1.8.0",
     "node-cache": "^4.1.1",
     "node-fetch": "^1.6.3",
