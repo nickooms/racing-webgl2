@@ -2,6 +2,7 @@ const fetch = require('node-fetch');
 const { Image } = require('canvas');
 const request = require('request');
 
+const parseCapabilities = require('./CapabilitiesParser');
 const { float3 } = require('./util');
 const Cache = require('./Cache');
 
@@ -27,6 +28,14 @@ const boundingBox = ({ min, max }) => [min.x, min.y, max.x, max.y].map(float3).j
 const qs = params => Object.entries(params).map(keyValue).join('&');
 
 const WMS = {
+  capabilities: async () => {
+    const params = Object.assign({}, PARAMS, { REQUEST: 'GetCapabilities' });
+    const response = await fetch(`${URL}?${qs(params)}`);
+    const capabilities = await response.text();
+    const parsed = await parseCapabilities(capabilities);
+    // console.log(capabilities);
+    return parsed;
+  },
   query: async ({
     width,
     height,

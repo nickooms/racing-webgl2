@@ -9,7 +9,7 @@ const genId = query => JSON.stringify(query)
   .replace(/\//g, '_');
 
 class Cache {
-  constructor({ base = 'cache', name = 'cache', logging = true } = {}) {
+  constructor({ base = 'cache', name = 'cache', logging = false } = {}) {
     Object.assign(this, { base, name, logging });
     this[cacheSymbol] = persistentCache({ base, name });
   }

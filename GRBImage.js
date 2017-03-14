@@ -5,7 +5,7 @@ const fs = require('fs');
 const { list, object } = require('./app/lib/crab');
 const MarchingSquares = require('./MarchingSquares');
 const { compose, flatten } = require('./functional');
-const { query, getFeatureInfo } = require('./WMS');
+const { capabilities, query, getFeatureInfo } = require('./WMS');
 const { bold, red, gray, cyan, green, yellow } = require('./Logging');
 const GeoPunt = require('./GeoPunt');
 const Point = require('./models/Point');
@@ -114,6 +114,9 @@ class Layers {
   static get GBG() {
     return 'GRB_GBG';
   }
+  static get HNR_GBG() {
+    return 'GRB_HNR_GBG';
+  }
   static fromNames(names) {
     return names.split(',').map(name => Layers[name]);
   }
@@ -124,7 +127,7 @@ const getLayer = async ({ width = SIZE, height = SIZE, bbox, layers = 'GRB_WBN' 
   return new GRBCanvas(width, height, bbox, img);
 };
 
-const { HNR_ADP, GBG, BSK, WBN, WGO, WVB, WKN, ADP } = Layers;
+const { HNR_ADP, GBG, BSK, WBN, WGO, WVB, WKN, ADP, HNR_GBG } = Layers;
 
 const unique = (objects) => {
   const map = new Map();
@@ -148,6 +151,12 @@ const List = {
       SorteerVeld,
     });
   },
+  gebouwen(huisnummerId) {
+    return list('ListGebouwenByHuisnummerId', {
+      HuisnummerId: huisnummerId,
+      SorteerVeld,
+    });
+  },
 };
 
 const Obj = {
@@ -159,6 +168,11 @@ const Obj = {
   perceel(id) {
     return object('GetPerceelByIdentificatorPerceel', {
       IdentificatorPerceel: id,
+    });
+  },
+  gebouw(id) {
+    return object('GetGebouwByIdentificatorGebouw', {
+      IdentificatorGebouw: id,
     });
   },
 };
@@ -281,6 +295,8 @@ const GRBImage = {
     const huisnummerIds = huisnummers.map(({ id }) => id);
     const percelen = unique(flatten(await Promise.all(huisnummerIds.map(id => List.percelen(id)))));
     const perceelObjects = await Promise.all(percelen.map(({ id }) => Obj.perceel(id)));
+    const gebouwen = unique(flatten(await Promise.all(huisnummerIds.map(id => List.gebouwen(id)))));
+    const gebouwObjects = await Promise.all(gebouwen.map(({ id }) => Obj.gebouw(id)));
     const straat = await straatById(+straatId);
     const straatNaam = straat.namen[straat.taal.id];
     const gemeente = await gemeenteById(straat.gemeente.id);
@@ -290,7 +306,7 @@ const GRBImage = {
     const min = { x: LowerLeft.X_Lambert72, y: LowerLeft.Y_Lambert72 };
     const max = { x: UpperRight.X_Lambert72, y: UpperRight.Y_Lambert72 };
     const bbox = new BBOX([min, max]);
-    const canvas = await getLayer({ bbox, layers: [ADP/* , GBG*/] });
+    const canvas = await getLayer({ bbox, layers: [ADP, GBG, HNR_GBG] });
     const perceelCenters = perceelObjects
       .map(({ center }) => center)
       .map(x => canvas.pixel(x));
@@ -298,51 +314,41 @@ const GRBImage = {
       const color = canvas.color(perceel);
       if (color) {
         const { features } = await canvas.featureInfo(ADP, perceel);
-        // features.forEach(({ geometry: { coordinates: [polygon] } }) => {
         await Promise.all(features.map(async (feature) => {
           const coordinates = await GRBImage
             .polygon3d({ canvas, feature, straatId });
-          /* const { geometry: { coordinates: [polygon] } } = feature;
-          const id = feature.id.split('.')[1];
-          const vertices = polygon;
-          const corners = polygon.map(([x, y]) => ({ x, y }));
-          const coordinates = polygon
-            .map(Point.fromArray)
-            .map(coordinate => canvas.pixel(coordinate));
-          const coords = corners
-            .map(corner => canvas.coordinate(corner))
-            .map(({ x, y }) => [float3(x), float3(y)]);
-          const bboxCoords = new BBOX(corners.map(corner => canvas.coordinate(corner)));
-          const { center: mid } = bboxCoords;
-          const centeredCoords = coords.concat([coords[0]]).map(([x, y]) =>
-            [float3((mid.x - x)), 0, float3((mid.y - y))]);
-          const position = flatten(centeredCoords);
-          const center = [float3(mid.x), float3(mid.y)];
-          const normal = flatten(coords.concat([null, null]).map(() => [0, 1, 0]));
-          const texcoord = flatten(coords.map(() => [0, 0]));
-          const triangles = earcut(flatten(vertices));
-          const indices = flatten(triangles);
-          const ctx = canvas.ctx;
-          for (let i = triangles.length; i;) {
-            ctx.beginPath();
-            for (let j = 0; j < 3; j++) {
-              --i;
-              const triangle = triangles[i];
-              ctx[j === 0 ? 'moveTo' : 'lineTo'](vertices[triangle][0], vertices[triangle][1]);
-            }
-            ctx.closePath();
-            ctx.stroke();
-          }
-          const type = 'perceel';
-          const obj = { type, straatId, position, center, normal, texcoord, indices };
-          Perceel.findOneAndUpdate({ id, type }, obj, { upsert: true, new: true })
-          .then(wegbaan => console.log(`Added ${wegbaan.type} ${wegbaan.id}`))
-          .catch(error);*/
           canvas.polygon(coordinates);
         }));
       }
     }));
-    // canvas.points(perceelCenters);
+    // const canvas2 = await getLayer({ bbox, layers: [GBG] });
+    // console.log(gebouwObjects);
+    const layers = await capabilities();
+    const capability = layers.WMS_Capabilities.Capability[0];
+    const layerInfo = capability.Layer[0].Layer[0].Layer.map(({
+      Name: [id],
+      Title: [name],
+      Abstract: [description]
+    }) => ({
+      id,
+      name,
+      description
+    }));
+    dir(layerInfo);
+    /* const perceelCenters = perceelObjects
+      .map(({ center }) => center)
+      .map(x => canvas.pixel(x));
+    await Promise.all(perceelCenters.map(async (perceel) => {
+      const color = canvas.color(perceel);
+      if (color) {
+        const { features } = await canvas.featureInfo(ADP, perceel);
+        await Promise.all(features.map(async (feature) => {
+          const coordinates = await GRBImage
+            .polygon3d({ canvas, feature, straatId });
+          canvas.polygon(coordinates);
+        }));
+      }
+    }));*/
     res.send(canvasToHTML(canvas));
   },
   wegbaan: async ({ params: { straatId, layerNames = 'WBN,WGO' } }, res) => {

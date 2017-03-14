@@ -9,7 +9,7 @@
     "start": "node dist",
     "prestart": "npm run -s build",
     "eslint": "eslint src",
-    "server": "SET NODE_ENV=dev&& nodemon -i cache server.js",
+    "server": "NODE_ENV=dev&& nodemon -i cache server.js",
     "babel-server": "nodemon --exec npm run babel-node -- server.js",
     "test": "mocha --timeout 10000",
     "test-eslint": "npm run eslint && npm test",
@@ -60,7 +60,8 @@
     "persistent-cache": "^1.1.1",
     "request": "^2.79.0",
     "request-promise": "^4.1.1",
-    "resource-router-middleware": "^0.6.0"
+    "resource-router-middleware": "^0.6.0",
+    "xml2js": "^0.4.17"
   },
   "devDependencies": {
     "babel-cli": "^6.23.0",
