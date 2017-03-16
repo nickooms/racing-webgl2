@@ -306,20 +306,19 @@ const GRBImage = {
     const min = { x: LowerLeft.X_Lambert72, y: LowerLeft.Y_Lambert72 };
     const max = { x: UpperRight.X_Lambert72, y: UpperRight.Y_Lambert72 };
     const bbox = new BBOX([min, max]);
+    bbox.add(perceelObjects.map(({ center }) => center));
     const canvas = await getLayer({ bbox, layers: [ADP, GBG, HNR_GBG] });
+    // console.log(perceelObjects);
     const perceelCenters = perceelObjects
       .map(({ center }) => center)
       .map(x => canvas.pixel(x));
     await Promise.all(perceelCenters.map(async (perceel) => {
-      const color = canvas.color(perceel);
-      if (color) {
-        const { features } = await canvas.featureInfo(ADP, perceel);
-        await Promise.all(features.map(async (feature) => {
-          const coordinates = await GRBImage
-            .polygon3d({ canvas, feature, straatId });
-          canvas.polygon(coordinates);
-        }));
-      }
+      const { features } = await canvas.featureInfo(ADP, perceel);
+      await Promise.all(features.map(async (feature) => {
+        const coordinates = await GRBImage
+          .polygon3d({ canvas, feature, straatId });
+        canvas.polygon(coordinates);
+      }));
     }));
     // const canvas2 = await getLayer({ bbox, layers: [GBG] });
     // console.log(gebouwObjects);
