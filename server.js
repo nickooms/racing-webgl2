@@ -12,6 +12,21 @@ const { red, yellow, bold } = require('./Logging');
 const Objects = require('./app/routes');
 const imageRoutes = require('./image');
 const apiRoutes = require('./api');
+const Layers = require('./Layers');
+const Street = require('./model/Street');
+const { dir } = require('./util');
+var chalk = require( "chalk" );
+process.on(
+    "unhandledRejection",
+    function handleWarning( reason, promise ) {
+
+        console.log( chalk.red.bold( "[PROCESS] Unhandled Promise Rejection" ) );
+        console.log( chalk.red.bold( "- - - - - - - - - - - - - - - - - - -" ) );
+        console.log( reason );
+        console.log( chalk.red.bold( "- -" ) );
+
+    }
+);
 // const db = require('./db');
 
 const SorteerVeld = 0;
@@ -288,6 +303,26 @@ app.route('/svg/straat/:StraatnaamId')
   .get(SVG.straat);
 app.route('/svg/huisnummer/:HuisnummerId')
   .get(SVG.huisnummer);
+
+app.route('/layers')
+  .get(Layers.json);
+
+const pre = x => `
+  <html>
+    <body>
+      <pre>${JSON.stringify(x, null, 2)}</pre>
+    </body>
+  </html>
+`;
+
+app.route('/street/:id')
+  .get(async ({ params: { id } }, res) => {
+    // const street = new Street(id);
+    // await street.get();
+    const street = await Street.test();
+    dir(street);
+    res.json(street);
+  });
 
 imageRoutes(app);
 

@@ -1,6 +1,10 @@
 const { list, object } = require('../app/lib/crab');
 const HouseNumber = require('./HouseNumber');
 
+const GotHouseNumbers = Symbol('GotHouseNumbers');
+const GetHouseNumbers = Symbol('GetHouseNumbers');
+const GotBuildings = Symbol('GotBuildings');
+const GetBuildings = Symbol('GetBuildings');
 const SorteerVeld = 0;
 
 class HouseNumbers extends Array {
@@ -15,19 +19,25 @@ class HouseNumbers extends Array {
       await houseNumber.get();
       return houseNumber;
     }));
-    return new HouseNumbers(items);
+    const houseNumbers = new HouseNumbers(items);
+    houseNumbers.street = streetId;
+    return houseNumbers;
   }
 
   constructor(objectsOrIds) {
-    // console.log(objectsOrIds);
     super();
-    objectsOrIds.forEach((objectOrId) => {
-      if (Number.isInteger(objectOrId)) {
-        this.push(new HouseNumber(objectOrId));
-      } else if (objectOrId instanceof HouseNumber) {
-        this.push(objectOrId);
-      }
-    });
+    this[GotHouseNumbers] = false;
+    this[GotBuildings] = false;
+    if (objectsOrIds) {
+      objectsOrIds.forEach((objectOrId) => {
+        if (Number.isInteger(objectOrId)) {
+          this.push(new HouseNumber(objectOrId));
+        } else if (objectOrId instanceof HouseNumber) {
+          this.push(objectOrId);
+        }
+      });
+      this[GotHouseNumbers] = true;
+    }
   }
 
   async get() {
@@ -36,6 +46,16 @@ class HouseNumbers extends Array {
       return houseNumber;
     }));
     return this;
+  }
+
+  async buildings() {
+    if (!this[GotBuildings]) await this.get({ buildings: true });
+    return this.buildings;
+  }
+
+  byId(id) {
+    const withIds = this.filter(houseNumber => houseNumber.id === id);
+    return withIds.length ? withIds[0] : null;
   }
 }
 

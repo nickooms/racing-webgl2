@@ -25,11 +25,11 @@ fetch('../api/percelen')
   arraysList = result;
   const centers = arraysList.map(({ center: [x, y] }) => ({ x, y }));
   const bbox = new BBOX(centers);
-  bufferInfos = arraysList.map(({ center, position: pos, normal, texcoord, indices }) => {
+  bufferInfos = arraysList.map(({ type, center, position: pos, normal, texcoord, indices }) => {
     const position = [];
     for (let i = 0; i < pos.length; i += 3) {
       position.push(pos[i + 2] + (bbox.center.y - center[1]));
-      position.push(0);
+      position.push(type === 'perceel' ? 0 : -10);
       position.push(pos[i] + (bbox.center.x - center[0]));
     }
     return twgl.createBufferInfoFromArrays(gl, { position, normal, texcoord, indices });

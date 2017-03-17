@@ -4,43 +4,23 @@ const SorteerVeld = 0;
 
 const GotCRAB = Symbol('GotCRAB');
 const GetCRAB = Symbol('GetCRAB');
+const GotBuildings = Symbol('GotBuildings');
+const GetBuildings = Symbol('GetBuildings');
 const GetById = 'GetHuisnummerByHuisnummerId';
 const ID = 'HuisnummerId';
 
 const CRABMapping = crab => ({
   number: crab.nummer,
   [GotCRAB]: true,
-  /* name: crab.namen[crab.taal.id],
-  names: crab.namen,
-  language: crab.taal.id,
-  languages: crab.talen,
-  label: crab.label,
-  city: crab.gemeente.id,*/
 });
 
 const DEFAULTS = {
   id: undefined,
   [GotCRAB]: false,
-  /* name: undefined,
-  names: undefined,
-  language: undefined,
-  languages: undefined,
-  label: undefined,
-  city: undefined,*/
-  // huisnummers: undefined,
+  [GotBuildings]: false,
 };
 
 class HouseNumber {
-  /* static async byStreet(streetId) {
-    const result = await list('ListHuisnummersByStraatnaamId', { StraatnaamId: streetId, SorteerVeld });
-    const items = await Promise.all(result.map(async ({ id }) => {
-      const houseNumber = new HouseNumber(id);
-      await houseNumber.get();
-      return houseNumber;
-    }));
-    return items;
-  }*/
-
   constructor(objectOrId) {
     Object.assign(this, DEFAULTS);
     if (Number.isInteger(objectOrId)) {
@@ -54,18 +34,18 @@ class HouseNumber {
     return result;
   }
 
-  async get() {
+  async [GetBuildings]() {
+    const buildings = await Buildings.byHouseNumbers();
+    this.buildings = buildings;
+    this[GotCRAB] = true;
+    return this;
+  }
+
+  async get({ buildings = false } = {}) {
     if (!this[GotCRAB]) await this[GetCRAB]();
+    if (buildings && !this[GotBuildings]) await this[GetBuildings]();
     return this;
   }
 }
-
-const test = async () => {
-  /* const street = new Street(7338);
-  await street.get();
-  console.log(street);*/
-};
-
-test();
 
 module.exports = HouseNumber;

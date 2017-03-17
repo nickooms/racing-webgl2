@@ -1,9 +1,7 @@
-const { /* list,*/ object } = require('../app/lib/crab');
+const { object } = require('../app/lib/crab');
 const HouseNumbers = require('./HouseNumbers');
+const Buildings = require('./Buildings');
 const Plots = require('./Plots');
-// const HouseNumber = require('./HouseNumber');
-
-// const SorteerVeld = 0;
 
 const GetCRAB = Symbol('GetCRAB');
 const GetById = 'GetStraatnaamByStraatnaamId';
@@ -27,14 +25,15 @@ const DEFAULTS = {
   label: undefined,
   city: undefined,
   houseNumbers: undefined,
+  plots: undefined,
+  buildings: undefined,
 };
 
 class Street {
   constructor(objectOrId) {
     Object.assign(this, DEFAULTS);
-    if (Number.isInteger(objectOrId)) {
-      this.id = objectOrId;
-    }
+    if (Number.isInteger(objectOrId)) this.id = objectOrId;
+    if (typeof objectOrId === 'string') this.id = +objectOrId;
   }
 
   async [GetCRAB]() {
@@ -57,17 +56,19 @@ class Street {
     if (this.houseNumbers === undefined) await this.getHouseNumbers();
     this.plots = await Plots.byHouseNumbers(this.houseNumbers);
   }
+
+  async getBuildings() {
+    if (this.houseNumbers === undefined) await this.getHouseNumbers();
+    this.buildings = await Buildings.byHouseNumbers(this.houseNumbers);
+  }
+
+  static async test() {
+    const street = new Street(7338);
+    await street.get();
+    await street.getPlots();
+    await street.getBuildings();
+    return street;
+  }
 }
-
-const test = async () => {
-  const street = new Street(7338);
-  await street.get();
-  await street.getPlots();
-  // await street.getHouseNumbers();
-  // await street.houseNumbers.get();
-  console.log(street);
-};
-
-// test();
 
 module.exports = Street;

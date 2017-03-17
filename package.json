@@ -4,6 +4,10 @@
   "description": "Racing with WebGL2",
   "main": "dist",
   "scripts": {
+    "react:start": "react-scripts start",
+    "react:build": "react-scripts build",
+    "react:test": "react-scripts test --env=jsdom",
+    "react:eject": "react-scripts eject",
     "dev": "nodemon -w src --exec \"babel-node src --presets es2015,stage-0\"",
     "build": "babel src -s -D -d dist --presets es2015,stage-0",
     "start": "node dist",
@@ -39,6 +43,7 @@
   },
   "repository": "nickooms/racing-webgl2",
   "author": "Nick Ooms <oomsni@gmail.com>",
+  "proxy": "http://localhost:8080",
   "license": "MIT",
   "dependencies": {
     "ansi-styles": "^3.0.0",
@@ -52,12 +57,16 @@
     "express": "^4.13.3",
     "fmt-obj": "^1.1.1",
     "htmlparser2": "^3.9.2",
+    "material-ui": "^0.17.1",
     "mongoose": "^4.7.7",
     "mongoose-geojson-schema": "^2.1.2",
     "morgan": "^1.8.0",
     "node-cache": "^4.1.1",
     "node-fetch": "^1.6.3",
     "persistent-cache": "^1.1.1",
+    "react": "^15.4.2",
+    "react-dom": "^15.4.2",
+    "react-swipeable-views": "^0.11.1",
     "request": "^2.79.0",
     "request-promise": "^4.1.1",
     "resource-router-middleware": "^0.6.0",
@@ -80,6 +89,7 @@
     "eslint-plugin-jsx-a11y": "^4.0.0",
     "eslint-plugin-react": "^6.10.0",
     "mocha": "^3.2.0",
-    "nodemon": "^1.11.0"
+    "nodemon": "^1.11.0",
+    "react-scripts": "0.9.5"
   }
 }

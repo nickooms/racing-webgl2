@@ -1,4 +1,5 @@
 const Perceel = require('./models/Perceel');
+const Gebouw = require('./models/Gebouw');
 const Wegbaan = require('./models/Wegbaan');
 require('./db');
 
@@ -19,6 +20,10 @@ const apiRoutes = (app) => {
 
   app.route('/api/percelen')
     .get((req, res) => Perceel.find({})
+      .exec(json(res)));
+
+  app.route('/api/hoofdgebouwen')
+    .get((req, res) => Gebouw.find({})
       .exec(json(res)));
 };
 
