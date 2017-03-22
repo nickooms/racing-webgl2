@@ -11,9 +11,10 @@ import getMuiTheme from 'material-ui/styles/getMuiTheme';
 // console.log("colors", colors);
 // const colorList = Object.keys(colors);
 // const color = colors[colorList[parseInt(Math.random() * colorList.length, 10)]];
-console.log(darkBaseTheme);
+// console.log(darkBaseTheme);
 // console.log(color);
-
+// const Citrus = [0xff6600, 0xc13b00, 0x5e6d70, 0x424e4f, 0x1b1d1d];
+// const DragonflySun = [0x261822, 0x40152a, 0x731630, 0xcc1e2c, 0xff5434];
 const muiTheme = getMuiTheme({
   palette: {
     accent1Color: darkBaseTheme.palette.accent1Color,
@@ -29,12 +30,9 @@ const muiTheme = getMuiTheme({
     secondaryTextColor: darkBaseTheme.palette.secondaryTextColor,
     disabledColor: darkBaseTheme.palette.disabledColor,
   },
-  /* appBar: {
-    height: 50,
-  },*/
-  button: Object.assign({}, darkBaseTheme.button),
+  // button: Object.assign({}, darkBaseTheme.button),
 });
-console.log(muiTheme);
+muiTheme.toolbar.backgroundColor = muiTheme.appBar.color;
 
 const App = ({ children }) => (
   <MuiThemeProvider muiTheme={muiTheme}>

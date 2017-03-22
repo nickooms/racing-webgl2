@@ -6,18 +6,21 @@ import './../index.css';
 
 injectTapEventPlugin();
 
+const houseNumberListItems = houseNumbers =>
+  houseNumbers && houseNumbers.map(({ id, number }, index) => (
+    <HouseNumberListItem key={id} selected={index === 0} {...{ id, number }} />
+  ));
+
 const HouseNumberList = ({ houseNumbers }) => (
-  <Table selectable>
-    <TableHeader adjustForCheckbox displaySelectAll enableSelectAll>
+  <Table selectable multiSelectable allRowsSelected>
+    <TableHeader adjustForCheckbox={true} displaySelectAll={true} enableSelectAll={true}>
       <TableRow>
         <TableHeaderColumn>ID</TableHeaderColumn>
         <TableHeaderColumn>Number</TableHeaderColumn>
       </TableRow>
     </TableHeader>
     <TableBody displayRowCheckbox showRowHover>
-      {houseNumbers && houseNumbers.map(({ id, number }, index) => (
-        <HouseNumberListItem key={id} selected={index === 0} {...{ id, number }} />
-      ))}
+      {houseNumberListItems(houseNumbers)}
     </TableBody>
   </Table>
 );
