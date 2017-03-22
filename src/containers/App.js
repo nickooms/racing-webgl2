@@ -2,26 +2,36 @@ import React, { PropTypes } from 'react';
 import { connect } from 'react-redux';
 // import Header from '../components/Header';
 // import Button from '../components/Button';
-import * as colors from 'material-ui/styles/colors';
-import darkBaseTheme from 'material-ui/styles/baseThemes/darkBaseTheme';
+// import * as colors from 'material-ui/styles/colors';
+import darkBaseTheme from 'material-ui/styles/baseThemes/lightBaseTheme';
 import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
 import getMuiTheme from 'material-ui/styles/getMuiTheme';
 // import muiThemeable from 'material-ui/styles/muiThemeable';
-import AppBar from '../components/AppBar';
+// import AppBar from '../components/AppBar';
 // console.log("colors", colors);
-const colorList = Object.keys(colors);
-const color = colors[colorList[parseInt(Math.random() * colorList.length, 10)]];
+// const colorList = Object.keys(colors);
+// const color = colors[colorList[parseInt(Math.random() * colorList.length, 10)]];
 console.log(darkBaseTheme);
-console.log(color);
+// console.log(color);
 
 const muiTheme = getMuiTheme({
   palette: {
-    accent2Color: color,
-    textColor: color,
+    accent1Color: darkBaseTheme.palette.accent1Color,
+    accent2Color: darkBaseTheme.palette.accent2Color,
+    accent3Color: darkBaseTheme.palette.accent3Color,
+    textColor: darkBaseTheme.palette.textColor,
+    canvasColor: darkBaseTheme.palette.canvasColor,
+    primary1Color: darkBaseTheme.palette.primary1Color,
+    primary2Color: darkBaseTheme.palette.primary2Color,
+    primary3Color: darkBaseTheme.palette.primary3Color,
+    borderColor: darkBaseTheme.palette.borderColor,
+    alternateTextColor: darkBaseTheme.palette.alternateTextColor,
+    secondaryTextColor: darkBaseTheme.palette.secondaryTextColor,
+    disabledColor: darkBaseTheme.palette.disabledColor,
   },
-  appBar: {
+  /* appBar: {
     height: 50,
-  },
+  },*/
   button: Object.assign({}, darkBaseTheme.button),
 });
 console.log(muiTheme);
@@ -33,7 +43,6 @@ const App = ({ children }) => (
       <Button>Change</Button>
     </Header>*/}
     <main>
-      <AppBar title="My AppBar" />
       {children}
     </main>
   </MuiThemeProvider>

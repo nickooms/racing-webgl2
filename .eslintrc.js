@@ -11,5 +11,6 @@ module.exports = {
     "linebreak-style": 0,
     "no-continue": 0,
     "no-plusplus": 0,
+    "react/jsx-filename-extension": 0,
   },
 };

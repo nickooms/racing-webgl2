@@ -1,13 +1,40 @@
 import React, { Component } from 'react';
 import fetch from 'node-fetch';
 import muiThemeable from 'material-ui/styles/muiThemeable';
+import AppBar from 'material-ui/AppBar';
+import {Tabs, Tab} from 'material-ui/Tabs';
+import Drawer from 'material-ui/Drawer';
+import MenuItem from 'material-ui/MenuItem';
+import SwipeableViews from 'react-swipeable-views';
 import HouseNumberList from '../HouseNumberList';
+
+const styles = {
+  headline: {
+    fontSize: 24,
+    paddingTop: 16,
+    marginBottom: 12,
+    fontWeight: 400,
+  },
+  slide: {
+    padding: 10,
+  },
+};
 
 class Street extends Component {
   constructor(props, context) {
     super(props, context);
-    this.state = { street: null };
+    this.state = {
+      open: false,
+      slideIndex: 0,
+      street: null
+    };
   }
+
+  handleChange = value => this.setState({ slideIndex: value });
+
+  handleToggle = () => this.setState({ open: !this.state.open });
+
+  handleClose = () => this.setState({ open: false });
 
   componentDidMount() {
     this.load(7338);
@@ -22,7 +49,30 @@ class Street extends Component {
 
   render() {
     return (
-      <HouseNumberList houseNumbers={this.state.street && this.state.street.houseNumbers} />
+      <div>
+        <AppBar title="Street" onTouchTap={this.handleToggle} />
+        <Drawer docked={false} open={this.state.open} onRequestChange={(open) => this.setState({open})} width={200}>
+          <MenuItem onTouchTap={this.handleClose}>Menu Item</MenuItem>
+          <MenuItem onTouchTap={this.handleClose}>Menu Item 2</MenuItem>
+        </Drawer>
+        <Tabs onChange={this.handleChange} value={this.state.slideIndex}>
+          <Tab value={0} label="Street" />
+          <Tab value={1} label="HouseNumbers" />
+          <Tab value={2} label="RoadObjects" />
+        </Tabs>
+        <SwipeableViews index={this.state.slideIndex} onChangeIndex={this.handleChange}>
+          <div>
+            <h2 style={styles.headline}>Tabs with slide effect</h2>
+            Swipe to see the next slide.<br />
+          </div>
+          <div style={styles.slide}>
+            <HouseNumberList houseNumbers={this.state.street && this.state.street.houseNumbers} />
+          </div>
+          <div style={styles.slide}>
+            slide n°3
+          </div>
+        </SwipeableViews>
+      </div>
     );
   }
 }
