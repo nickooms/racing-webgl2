@@ -1,0 +1,17 @@
+.center {
+  display: flex;
+  justify-content: space-around;
+  flex-direction: row wrap;
+}
+
+.margin {
+  margin: 8px;
+}
+
+.flex {
+  flex: 1;
+}
+
+.red {
+  background-color: red;
+}
