@@ -4,6 +4,7 @@ const bodyParser = require('body-parser');
 const express = require('express');
 // const morgan = require('morgan');
 // const config = require('config');
+const chalk = require('chalk');
 const cors = require('cors');
 
 const { list, object } = require('./app/lib/crab');
@@ -13,20 +14,19 @@ const Objects = require('./app/routes');
 const imageRoutes = require('./image');
 const apiRoutes = require('./api');
 const Layers = require('./Layers');
+const City = require('./model/City');
 const Street = require('./model/Street');
+const HouseNumber = require('./model/HouseNumber');
+const Building = require('./model/Building');
 const { dir } = require('./util');
-var chalk = require( "chalk" );
-process.on(
-    "unhandledRejection",
-    function handleWarning( reason, promise ) {
 
-        console.log( chalk.red.bold( "[PROCESS] Unhandled Promise Rejection" ) );
-        console.log( chalk.red.bold( "- - - - - - - - - - - - - - - - - - -" ) );
-        console.log( reason );
-        console.log( chalk.red.bold( "- -" ) );
-
-    }
-);
+process.on('unhandledRejection', (reason, promise) => {
+  console.log(chalk.red.bold('[PROCESS] Unhandled Promise Rejection'));
+  console.log(chalk.red.bold('- - - - - - - - - - - - - - - - - - -'));
+  console.log(reason);
+  console.log(promise);
+  console.log(chalk.red.bold('- -'));
+});
 // const db = require('./db');
 
 const SorteerVeld = 0;
@@ -307,22 +307,57 @@ app.route('/svg/huisnummer/:HuisnummerId')
 app.route('/layers')
   .get(Layers.json);
 
-const pre = x => `
+/* const pre = x => `
   <html>
     <body>
       <pre>${JSON.stringify(x, null, 2)}</pre>
     </body>
   </html>
-`;
+`;*/
+
+app.route('/city/:id')
+  .get(async ({ params: { id } }, res) => {
+    const city = new City(id);
+    await city.get();
+    res.json(city);
+  });
+app.route('/city/:id/streets')
+  .get(async ({ params: { id } }, res) => {
+    const city = new City(id);
+    const streets = await city.Streets;
+    await streets.get();
+    res.json(streets);
+  });
 
 app.route('/street/:id')
+  .get(async ({ params: { id } }, res) =>
+    res.json(await new Street(id).get()));
+app.route('/street/:id/city')
   .get(async ({ params: { id } }, res) => {
-    // const street = new Street(id);
-    // await street.get();
-    const street = await Street.test();
-    dir(street);
-    res.json(street);
+    const street = new Street(id);
+    await street.get();
+    const city = await street.City;
+    res.json(city);
   });
+const streetChild = x => app.route(`/street/:id/${x.toLowerCase()}`)
+  .get(async ({ params: { id } }, res) =>
+    res.json(await new Street(id)[x]));
+streetChild('HouseNumbers');
+streetChild('RoadObjects');
+streetChild('RoadSegments');
+
+app.route('/housenumber/:id')
+  .get(async ({ params: { id } }, res) =>
+    res.json(await new HouseNumber(id).get()));
+const houseNumberChild = x => app.route(`/housenumber/:id/${x.toLowerCase()}`)
+  .get(async ({ params: { id } }, res) =>
+    res.json(await new HouseNumber(id)[x]));
+houseNumberChild('Buildings');
+houseNumberChild('Plots');
+
+app.route('/building/:id')
+  .get(async ({ params: { id } }, res) =>
+    res.json(await new Building(+id).get()));
 
 imageRoutes(app);
 

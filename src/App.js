@@ -1,14 +1,15 @@
 import React, { Component } from 'react';
-import Street from './Street';
-import Colors from './Colors';
-import './App.css';
 import darkBaseTheme from 'material-ui/styles/baseThemes/darkBaseTheme';
-import {fade} from 'material-ui/utils/colorManipulator';
+import { fade } from 'material-ui/utils/colorManipulator';
 import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
 import getMuiTheme from 'material-ui/styles/getMuiTheme';
 import muiThemeable from 'material-ui/styles/muiThemeable';
-import {Tabs, Tab} from 'material-ui/Tabs';
+import { Tabs, Tab } from 'material-ui/Tabs';
 import * as colors from 'material-ui/styles/colors';
+import SwipeableViews from 'react-swipeable-views';
+import Street from './Street';
+import Colors from './Colors';
+import './App.css';
 
 const mainColors = Object.keys(colors).filter(color => color.indexOf('600') > 0).map(color => color.replace('600', ''));
 const {
@@ -17,7 +18,6 @@ const {
   purple500, purple700,
 } = colors;
 console.log(colors);
-import SwipeableViews from 'react-swipeable-views';
 
 console.log("darkBaseTheme", darkBaseTheme);
 const muiTheme = getMuiTheme(Object.assign({}, darkBaseTheme, {

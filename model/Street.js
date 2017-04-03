@@ -1,11 +1,19 @@
 const { object } = require('../app/lib/crab');
 const HouseNumbers = require('./HouseNumbers');
-const Buildings = require('./Buildings');
-const Plots = require('./Plots');
+const RoadObjects = require('./RoadObjects');
+const RoadSegments = require('./RoadSegments');
+const City = require('./City');
+const {
+  STREET,
+  CITY, CITY_ID, HAS_CITY,
+  HAS_STREET,
+  HOUSE_NUMBERS,
+  ROAD_OBJECTS, ROAD_OBJECT,
+  ROAD_SEGMENTS, ROAD_SEGMENT
+} = require('./Symbols');
 
-const GetCRAB = Symbol('GetCRAB');
-const GetById = 'GetStraatnaamByStraatnaamId';
 const ID = 'StraatnaamId';
+const GET_BY_ID = `GetStraatnaamBy${ID}`;
 
 const CRABMapping = crab => ({
   name: crab.namen[crab.taal.id],
@@ -13,7 +21,8 @@ const CRABMapping = crab => ({
   language: crab.taal.id,
   languages: crab.talen,
   label: crab.label,
-  city: crab.gemeente.id,
+  [CITY_ID]: crab.gemeente.id,
+  [HAS_STREET]: true,
 });
 
 const DEFAULTS = {
@@ -23,51 +32,66 @@ const DEFAULTS = {
   language: undefined,
   languages: undefined,
   label: undefined,
-  city: undefined,
-  houseNumbers: undefined,
-  plots: undefined,
-  buildings: undefined,
+  [HAS_CITY]: false,
+  [HAS_STREET]: false,
+  [CITY_ID]: undefined,
+  [HOUSE_NUMBERS]: new HouseNumbers(),
+  [ROAD_OBJECTS]: new RoadObjects(),
+  [ROAD_SEGMENTS]: new RoadSegments(),
 };
 
 class Street {
-  constructor(objectOrId) {
+  constructor(x) {
     Object.assign(this, DEFAULTS);
-    if (Number.isInteger(objectOrId)) this.id = objectOrId;
-    if (typeof objectOrId === 'string') this.id = +objectOrId;
+    if (Number.isInteger(x)) this.id = x;
+    if (typeof x === 'string') this.id = +x;
+    if (this.id) {
+      const houseNumbers = this[HOUSE_NUMBERS];
+      houseNumbers.street = this;
+      const roadObjects = this[ROAD_OBJECTS];
+      roadObjects.street = this;
+      const roadSegments = this[ROAD_SEGMENTS];
+      roadSegments.street = this;
+    }
   }
 
-  async [GetCRAB]() {
-    const result = await object(GetById, { [ID]: this.id });
+  async [STREET]() {
+    const result = await object(GET_BY_ID, { [ID]: this.id });
     Object.assign(this, CRABMapping(result));
-    return result;
+    return this;
   }
 
   async get() {
-    await this[GetCRAB]();
+    if (!this[HAS_STREET]) await this[STREET]();
     return this;
   }
 
-  async getHouseNumbers() {
-    this.houseNumbers = await HouseNumbers.byStreet(this.id);
-    return this;
+  get HouseNumbers() {
+    const houseNumbers = this[HOUSE_NUMBERS];
+    return houseNumbers.get();
   }
 
-  async getPlots() {
-    if (this.houseNumbers === undefined) await this.getHouseNumbers();
-    this.plots = await Plots.byHouseNumbers(this.houseNumbers);
+  get RoadObjects() {
+    const roadObjects = this[ROAD_OBJECTS];
+    return roadObjects.get();
   }
 
-  async getBuildings() {
-    if (this.houseNumbers === undefined) await this.getHouseNumbers();
-    this.buildings = await Buildings.byHouseNumbers(this.houseNumbers);
+  get RoadSegments() {
+    const roadSegments = this[ROAD_SEGMENTS];
+    return roadSegments.get();
   }
 
-  static async test() {
-    const street = new Street(7338);
-    await street.get();
-    await street.getPlots();
-    await street.getBuildings();
-    return street;
+  async [CITY]() {
+    if (!this[HAS_STREET]) await this[STREET].get();
+    if (!this[HAS_CITY]) {
+      this[CITY] = new City(this[CITY_ID]);
+      await this[CITY]();
+    }
+  }
+  get City() {
+    if (!this[HAS_CITY]) this[CITY] = new City(this[CITY_ID]);
+    const city = this[CITY];
+    return city.get();
   }
 }
 

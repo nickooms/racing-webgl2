@@ -1,4 +1,4 @@
-const fetch = require('node-fetch');
+const fetch = require('isomorphic-fetch');
 const { Image } = require('canvas');
 const request = require('request');
 

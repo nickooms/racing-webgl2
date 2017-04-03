@@ -219,7 +219,14 @@ const cacheName = (operation, id) => {
 const list = async (operation, query) => {
   const id = query;
   const handle = (html) => {
+    // console.log(html);
     const parsed = parse(html);
+    if (!parsed) {
+      // console.log(html);
+    }
+    if (!parsed.map) {
+      // console.log(operation, query);
+    }
     const r = parsed.map(mapping[operation](query));
     return r;
   };

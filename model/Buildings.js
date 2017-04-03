@@ -1,18 +1,5 @@
-const { list, object } = require('../app/lib/crab');
-const { flatten } = require('../functional');
+const arrayList = require('./ArrayList');
 
-const SorteerVeld = 0;
-
-class Buildings {
-  static async byHouseNumbers(houseNumbers) {
-    const buildings = flatten(await Promise.all(houseNumbers.map(async (houseNumber) => {
-      const result = await list('ListGebouwenByHuisnummerId', { HuisnummerId: houseNumber.id, SorteerVeld });
-      // console.log(result);
-      return result;
-    })));
-    // console.log(buildings);
-    return buildings;
-  }
-}
+const Buildings = arrayList({ crab: { plural: 'Gebouwen' } });
 
 module.exports = Buildings;

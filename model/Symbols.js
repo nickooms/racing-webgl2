@@ -1,0 +1,44 @@
+const Symbols = {
+  GET_CRAB: Symbol('GET_CRAB'),
+
+  DEFAULT: Symbol('DEFAULT'),
+  DEFAULTS: Symbol('DEFAULTS'),
+
+  LOADED: Symbol('LOADED'),
+  BY: Symbol('BY'),
+  BY_QUERY: Symbol('BY_QUERY'),
+  CRAB_CLASS_NAME: Symbol('CRAB_CLASS_NAME'),
+
+  CITY: Symbol('CITY'),
+  CITY_ID: Symbol('CITY_ID'),
+  HAS_CITY: Symbol('HAS_CITY'),
+
+  STREET: Symbol('STREET'),
+  HAS_STREET: Symbol('HAS_STREET'),
+  STREETS: Symbol('STREETS'),
+  HAS_STREETS: Symbol('HAS_STREETS'),
+
+  HOUSE_NUMBERS: Symbol('HOUSE_NUMBERS'),
+  HAS_HOUSE_NUMBERS: Symbol('HAS_HOUSE_NUMBERS'),
+
+  BUILDING: Symbol('BUILDING'),
+  HAS_BUILDING: Symbol('HAS_BUILDING'),
+  BUILDINGS: Symbol('BUILDINGS'),
+  HAS_BUILDINGS: Symbol('HAS_BUILDINGS'),
+
+  PLOTS: Symbol('PLOTS'),
+  HAS_PLOTS: Symbol('HAS_PLOTS'),
+  LIST_PLOTS: Symbol('LIST_PLOTS'),
+
+  ROAD_OBJECT: Symbol('ROAD_OBJECT'),
+  HAS_ROAD_OBJECT: Symbol('HAS_ROAD_OBJECT'),
+  ROAD_OBJECTS: Symbol('ROAD_OBJECTS'),
+  HAS_ROAD_OBJECTS: Symbol('HAS_ROAD_OBJECTS'),
+
+  ROAD_SEGMENT: Symbol('ROAD_SEGMENT'),
+  HAS_ROAD_SEGMENT: Symbol('HAS_ROAD_SEGMENT'),
+  ROAD_SEGMENTS: Symbol('ROAD_SEGMENTS'),
+  HAS_ROAD_SEGMENTS: Symbol('HAS_ROAD_SEGMENTS'),
+};
+
+module.exports = Symbols;

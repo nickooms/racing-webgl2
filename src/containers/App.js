@@ -30,6 +30,9 @@ const muiTheme = getMuiTheme({
     secondaryTextColor: darkBaseTheme.palette.secondaryTextColor,
     disabledColor: darkBaseTheme.palette.disabledColor,
   },
+  card: {
+    titleColor: darkBaseTheme.palette.primary1Color,
+  },
   // button: Object.assign({}, darkBaseTheme.button),
 });
 muiTheme.toolbar.backgroundColor = muiTheme.appBar.color;

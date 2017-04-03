@@ -1,17 +1,17 @@
 const { list } = require('../app/lib/crab');
-const HouseNumber = require('./HouseNumber');
+const RoadObject = require('./RoadObject');
 const Street = require('./Street');
 const { SorteerVeld } = require('./Constants');
-const { STREET, HOUSE_NUMBERS, HAS_HOUSE_NUMBERS } = require('./Symbols');
+const { STREET, ROAD_OBJECTS, HAS_ROAD_OBJECTS } = require('./Symbols');
 
-const BY_STREET = 'ListHuisnummersByStraatnaamId';
+const BY_STREET = 'ListWegobjectenByStraatnaamId';
 
 const DEFAULTS = {
   [STREET]: new Street.constructor(),
-  [HAS_HOUSE_NUMBERS]: false,
+  [HAS_ROAD_OBJECTS]: false,
 };
 
-class HouseNumbers extends Array {
+class RoadObjects extends Array {
   static get [Symbol.species]() {
     return Array;
   }
@@ -23,20 +23,20 @@ class HouseNumbers extends Array {
 
   async get() {
     const street = await this.street;
-    if (street.id) await this[HOUSE_NUMBERS]();
+    if (street.id) await this[ROAD_OBJECTS]();
     return this;
   }
 
-  async [HOUSE_NUMBERS]() {
-    if (!this[HAS_HOUSE_NUMBERS]) {
+  async [ROAD_OBJECTS]() {
+    if (!this[HAS_ROAD_OBJECTS]) {
       const result = await list(BY_STREET, { StraatnaamId: this.street.id, SorteerVeld });
       await Promise.all(result.map(async ({ id }) => {
-        const houseNumber = new HouseNumber(id);
-        await houseNumber.get();
-        this.push(houseNumber);
-        return houseNumber;
+        const roadObject = new RoadObject(id);
+        await roadObject.get();
+        this.push(roadObject);
+        return roadObject;
       }));
-      this[HAS_HOUSE_NUMBERS] = true;
+      this[HAS_ROAD_OBJECTS] = true;
     }
   }
 
@@ -51,4 +51,4 @@ class HouseNumbers extends Array {
   }
 }
 
-module.exports = HouseNumbers;
+module.exports = RoadObjects;
