@@ -1,4 +1,5 @@
 const persistentCache = require('persistent-cache');
+const cast = require('localcast')();
 const { bold, magenta, yellow, green, gray, blue, cyan } = require('./Logging');
 
 const cacheSymbol = Symbol('cache');
@@ -9,8 +10,8 @@ const genId = query => JSON.stringify(query)
   .replace(/\//g, '_');
 
 class Cache {
-  constructor({ base = 'cache', name = 'cache', logging = true } = {}) {
-    Object.assign(this, { base, name, logging });
+  constructor({ base = 'cache', name = 'cache', logging = true, localcast = false } = {}) {
+    Object.assign(this, { base, name, logging, localcast });
     this[cacheSymbol] = persistentCache({ base, name });
   }
 
@@ -34,7 +35,11 @@ class Cache {
           return `${key}: ${value}`;
         }).join(', ')} }`;
       }
-      console.log(`${action} ${cacheName} ${params}`);
+      if (this.localcast) {
+        cast.emit('Cache', JSON.stringify({ action, cacheName, params }));
+      } else {
+        console.log(`${action} ${cacheName} ${params}`);
+      }
     }
   }
 

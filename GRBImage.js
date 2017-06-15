@@ -154,7 +154,7 @@ const GRB = {
     async percelen(huisnummerId) {
       const ids = (await List.percelen(huisnummerId)).map(({ id }) => id);
       const percelen = await Promise.all(ids.map(id => GRB.Perceel.byId(id)));
-      console.log(percelen);
+      // console.log(percelen);
       return percelen;
     },
   },
@@ -214,16 +214,17 @@ const GRBImage = {
     const id = feature.id.split('.')[1];
     const vertices = polygon;
     const corners = polygon.map(([x, y]) => ({ x, y }));
-    const coordinates = polygon
-      .map(Point.fromArray)
+    const coordinates = corners// polygon
+      // .map(Point.fromArray)
       .map(coordinate => canvas.pixel(coordinate));
-    const coords = polygon.map(Point.fromArray).map(({ x, y }) => [x, y]);
+    const coords = polygon.map(Point.fromArray).map(({ y, x }) => [x, y]);
     // console.log("coords", coords);
-    const bboxCoords = new BBOX(corners);4
+    const bboxCoords = new BBOX(corners);
     const { center: mid } = bboxCoords;
     const centeredCoords = coords.concat([coords[0]]).map(([x, y]) =>
       [float3((mid.x - x)), 0, float3((mid.y - y))]);
     const position = flatten(centeredCoords);
+    // console.log(position);
     const center = [float3(mid.x), float3(mid.y)];
     const normal = flatten(coords.concat([null, null]).map(() => [0, 1, 0]));
     const texcoord = flatten(coords.map(() => [0, 0]));
@@ -261,9 +262,11 @@ const GRBImage = {
     GRBImage.log('straat', { straatId: +straatId });
     const huisnummers = await GRB.Straat.huisnummers(+straatId);
     const huisnummerIds = huisnummers.map(({ id }) => id);
-    const percelen = unique(flatten(await Promise.all(huisnummerIds.map(id => List.percelen(id)))));
+    const perceelMap = id => List.percelen(id);
+    const percelen = unique(flatten(await Promise.all(huisnummerIds.map(perceelMap))));
     const perceelObjects = await Promise.all(percelen.map(({ id }) => Obj.perceel(id)));
-    const gebouwen = unique(flatten(await Promise.all(huisnummerIds.map(id => List.gebouwen(id)))));
+    const gebouwMap = id => List.gebouwen(id);
+    const gebouwen = unique(flatten(await Promise.all(huisnummerIds.map(gebouwMap))));
     const gebouwObjects = await Promise.all(gebouwen.map(({ id }) => Obj.gebouw(id)));
     const straat = await straatById(+straatId);
     const straatNaam = straat.namen[straat.taal.id];

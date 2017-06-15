@@ -26,6 +26,8 @@ const Symbols = {
   BUILDINGS: Symbol('BUILDINGS'),
   HAS_BUILDINGS: Symbol('HAS_BUILDINGS'),
 
+  PLOT: Symbol('PLOT'),
+  HAS_PLOT: Symbol('HAS_PLOT'),
   PLOTS: Symbol('PLOTS'),
   HAS_PLOTS: Symbol('HAS_PLOTS'),
   LIST_PLOTS: Symbol('LIST_PLOTS'),

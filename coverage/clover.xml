@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<coverage generated="1491739736520" clover="3.2.0">
+  <project timestamp="1491739736521" name="All files">
+    <metrics statements="8" coveredstatements="8" conditionals="2" coveredconditionals="1" methods="4" coveredmethods="4" elements="14" coveredelements="13" complexity="0" loc="8" ncloc="8" packages="1" files="1" classes="1">
+      <file name="Link.react.js" path="/mnt/c/GitHub/racing-webgl2/src/components/Link.react.js">
+        <metrics statements="8" coveredstatements="8" conditionals="2" coveredconditionals="1" methods="4" coveredmethods="4"/>
+        <line num="4" count="1" type="stmt"/>
+        <line num="12" count="1" type="stmt"/>
+        <line num="14" count="1" type="stmt"/>
+        <line num="15" count="1" type="stmt"/>
+        <line num="17" count="1" type="stmt"/>
+        <line num="23" count="1" type="stmt"/>
+        <line num="27" count="1" type="stmt"/>
+        <line num="31" count="3" type="stmt"/>
+      </file>
+    </metrics>
+  </project>
+</coverage>

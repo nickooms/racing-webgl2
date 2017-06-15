@@ -1,4 +1,5 @@
-import React, { Component, PropTypes } from 'react';
+import React, { Component } from 'react';
+import PropTypes from 'prop-types';
 import fetch from 'isomorphic-fetch';
 import muiThemeable from 'material-ui/styles/muiThemeable';
 import AppBar from 'material-ui/AppBar';
@@ -8,7 +9,7 @@ import { Card, CardTitle, CardText } from 'material-ui/Card';
 import { List, ListItem } from 'material-ui/List';
 import Divider from 'material-ui/Divider';
 import SwipeableViews from 'react-swipeable-views';
-import BuildingList from './BuildingList';
+import BuildingsView from './BuildingsView';
 import PlotList from './PlotList';
 import DrawerList from './DrawerList';
 
@@ -43,6 +44,7 @@ class HouseNumber extends Component {
   constructor(props, context) {
     super(props, context);
     this.state = {
+      id: +props.params.houseNumberId,
       open: false,
       slideIndex: HOUSE_NUMBER,
       houseNumber: null,
@@ -52,7 +54,7 @@ class HouseNumber extends Component {
   }
 
   componentDidMount() {
-    this.load(1373962);
+    this.load(this.state.id);
   }
 
   handleChange = value => this.setState({ slideIndex: value });
@@ -121,7 +123,7 @@ class HouseNumber extends Component {
               </List>
             </CardText>
           </Card>
-          <BuildingList houseNumber={houseNumber} buildings={buildings} />
+          <BuildingsView houseNumber={houseNumber} buildings={buildings} />
           <PlotList houseNumber={houseNumber} plots={plots} />
         </SwipeableViews>
       </div>
@@ -130,10 +132,14 @@ class HouseNumber extends Component {
 }
 
 HouseNumber.defaultProps = {
+  params: { houseNumberId: null },
   muiTheme: {},
 };
 
 HouseNumber.propTypes = {
+  params: PropTypes.shape({
+    houseNumberId: PropTypes.string,
+  }),
   muiTheme: PropTypes.shape({}),
 };
 

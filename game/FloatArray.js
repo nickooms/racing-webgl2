@@ -1,4 +1,8 @@
-class FloatArray {
+import Points from './Points.js';
+import FloatArray from './FloatArray.js';
+import ObjectsArray from './ObjectsArray.js';
+
+export default class FloatArray {
   static toPoint([x, y]) {
     return { x, y };
   }

@@ -1,4 +1,5 @@
-import React, { PropTypes } from 'react';
+import React from 'react';
+import PropTypes from 'prop-types';
 import { Link } from 'react-router';
 import { Card, CardTitle, CardText } from 'material-ui/Card';
 import muiThemeable from 'material-ui/styles/muiThemeable';

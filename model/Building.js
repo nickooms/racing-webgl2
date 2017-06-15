@@ -4,12 +4,10 @@ const { BUILDING, HAS_BUILDING } = require('./Symbols');
 const ID = 'IdentificatorGebouw';
 const GetById = `GetGebouwBy${ID}`;
 
-const CRABMapping = ({ aard: type, status, geometrie /* center, bounds: { min, max }*/}) => ({
+const CRABMapping = ({ aard: type, status, geometrie }) => ({
   type,
   status,
-  polygon: geometrie.polygon.map(({ x, y }) => [x, y]),
-  /* center: [center.x, center.y],
-  bounds: [[min.x, min.y], [max.x, max.y]],*/
+  polygon: geometrie.polygon.map(({ x, y }) => [y, x]),
   [HAS_BUILDING]: true,
 });
 
@@ -27,7 +25,6 @@ class Building {
 
   async [BUILDING]() {
     const result = await object(GetById, { [ID]: this.id });
-    console.log(result);
     Object.assign(this, CRABMapping(result));
     return result;
   }

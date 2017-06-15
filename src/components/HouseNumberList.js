@@ -1,4 +1,5 @@
-import React, { PropTypes } from 'react';
+import React from 'react';
+import PropTypes from 'prop-types';
 import muiThemeable from 'material-ui/styles/muiThemeable';
 import { Card, CardTitle, CardText } from 'material-ui/Card';
 import { List, ListItem } from 'material-ui/List';

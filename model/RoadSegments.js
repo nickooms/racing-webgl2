@@ -2,7 +2,7 @@ const { list } = require('../app/lib/crab');
 const RoadSegment = require('./RoadSegment');
 const Street = require('./Street');
 const { SorteerVeld } = require('./Constants');
-const { STREET, ROAD_OBJECTS, HAS_ROAD_OBJECTS, ROAD_SEGMENTS, HAS_ROAD_SEGMENTS } = require('./Symbols');
+const { STREET, ROAD_SEGMENTS, HAS_ROAD_SEGMENTS } = require('./Symbols');
 
 const BY_STREET = 'ListWegsegmentenByStraatnaamId';
 
@@ -31,8 +31,8 @@ class RoadSegments extends Array {
     if (!this[HAS_ROAD_SEGMENTS]) {
       const result = await list(BY_STREET, { StraatnaamId: this.street.id, SorteerVeld });
       await Promise.all(result.map(async ({ id }) => {
-        const roadSegment = new RoadSegment(id);
-        await roadSegment.get();
+        const roadSegment = await RoadSegment.get(id);
+        // await roadSegment.get();
         this.push(roadSegment);
         return roadSegment;
       }));

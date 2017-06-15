@@ -1,26 +1,14 @@
-FROM alpine:3.4
+FROM node:7
 
-# File Author / Maintainer
-LABEL authors="Zouhir Chahoud <zouhir@zouhir.org>"
+RUN mkdir -p /usr/src/app
+WORKDIR /usr/src/app
 
-# Update & install required packages
-RUN apk add --update nodejs bash git
+COPY package.json /usr/src/app/
+RUN npm install
 
-# Install app dependencies
-COPY package.json /www/package.json
-RUN cd /www; npm install
+COPY . /usr/src/app
 
-# Copy app source
-COPY . /www
+EXPOSE 3000
 
-# Set work directory to /www
-WORKDIR /www
+CMD [ "npm", "start" ]
 
-# set your port
-ENV PORT 8080
-
-# expose the port to outside world
-EXPOSE  8080
-
-# start command as per package.json
-CMD ["npm", "start"]

@@ -18,3 +18,9 @@ const tableCollapsed = (label, item, mapping) => {
     groupCollapsed(label)(() => console.table(item));
   }
 };
+
+export default {
+  group,
+  groupCollapsed,
+  tableCollapsed,
+};

@@ -1,11 +1,7 @@
-class Float {
-  static toNegative(float) {
-    return -float;
-  }
-  static toFixed3(float) {
-    return float.toFixed(3);
-  }
-  static add(result, number) {
-    return result + number;
-  }
+export default class Float {
+  static toNegative = x=> -x;
+
+  static toFixed3 = x => x.toFixed(3);
+
+  static add = (result, number) => result + number;
 }

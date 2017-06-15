@@ -4,7 +4,8 @@ const { ROAD_SEGMENT, HAS_ROAD_SEGMENT } = require('./Symbols');
 const ID = 'IdentificatorWegsegment';
 const GetById = `GetWegsegmentBy${ID}`;
 
-const CRABMapping = () => ({
+const CRABMapping = ({ geometrie: { lineString } }) => ({
+  polyLine: lineString.map(({ x, y }) => [x, y]),
   [HAS_ROAD_SEGMENT]: true,
 });
 
@@ -14,6 +15,10 @@ const DEFAULTS = {
 };
 
 class RoadSegment {
+  static get(id) {
+    return new RoadSegment(id).get();
+  }
+
   constructor(x) {
     Object.assign(this, DEFAULTS);
     if (Number.isInteger(x)) this.id = x;

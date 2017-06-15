@@ -1,4 +1,4 @@
-class Points {
+export default class Points {
   static toDistance(point1, point2) {
     const x = Math.abs(point1[0] - point2[0]);
     const y = Math.abs(point1[1] - point2[1]);

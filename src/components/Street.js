@@ -1,67 +1,48 @@
-import React, { Component, PropTypes } from 'react';
+import React, { Component } from 'react';
 import fetch from 'isomorphic-fetch';
 import muiThemeable from 'material-ui/styles/muiThemeable';
 import AppBar from 'material-ui/AppBar';
 import { Tabs, Tab } from 'material-ui/Tabs';
 import Drawer from 'material-ui/Drawer';
-import { Card, CardTitle, CardText } from 'material-ui/Card';
-import { List, ListItem } from 'material-ui/List';
-import Divider from 'material-ui/Divider';
-import FlatButton from 'material-ui/FlatButton';
 import SwipeableViews from 'react-swipeable-views';
-import { Link } from 'react-router';
 import HouseNumberList from './HouseNumberList';
-import RoadObjectList from './RoadObjectList';
-import RoadSegmentList from './RoadSegmentList';
+import BuildingsView from './BuildingsView';
+import Plots from './Plots';
+import RoadObjectsView from './RoadObjectsView';
+import RoadSegmentsView from './RoadSegmentsView';
 import DrawerList from './DrawerList';
+import StreetView from './StreetView';
 
+const LOADER = Symbol('Loader');
 const URL = 'http://localhost:8080/street';
 const STREET = 0;
 const HOUSE_NUMBERS = 1;
-const ROAD_OBJECTS = 2;
-const ROAD_SEGMENTS = 3;
-
-const styles = {
-  headline: {
-    fontSize: 24,
-    paddingTop: 16,
-    marginBottom: 12,
-    fontWeight: 400,
-  },
-  slide: {
-    padding: 10,
-  },
-  bar: {
-    height: 48,
-  },
-  text: {
-    marginLeft: 20,
-    height: 48,
-  },
-  card: {
-    flex: 1,
-  },
-};
+const BUILDINGS = 2;
+const PLOTS = 3;
+const ROAD_OBJECTS = 4;
+const ROAD_SEGMENTS = 5;
 
 class Street extends Component {
   constructor(props, context) {
     super(props, context);
     this.state = {
       open: false,
-      slideIndex: STREET,
+      tabIndex: STREET,
       street: null,
       houseNumbers: null,
+      buildings: null,
+      plots: null,
       roadObjects: null,
       roadSegments: null,
       city: null,
     };
   }
 
-  componentDidMount() {
-    this.load(7338);
-  }
+  componentDidMount = () => this.load(7338);
 
-  handleChange = value => this.setState({ slideIndex: value });
+  URL = URL;
+
+  handleChange = tabIndex => this.setState({ tabIndex });
 
   handleToggle = () => this.setState({ open: !this.state.open });
 
@@ -70,111 +51,78 @@ class Street extends Component {
   handleRequestChange = open => this.setState({ open });
 
   get id() {
-    return this.state.street.id;
+    return this.state.id;
   }
 
-  async load(id) {
-    const response = await fetch(`${URL}/${id}`);
-    const street = await response.json();
-    this.setState({ street });
+  set id(id) {
+    this.setState({ id });
+  }
+
+  [LOADER] = async (url) => {
+    const response = await fetch(url);
+    const json = await response.json();
+    return json;
+  };
+
+  loadUrl = url => async () => {
+    this.setState({ [url]: await this[LOADER](`${URL}/${this.id}/${url.toLowerCase()}`) });
+  }
+
+  load = async (id) => {
+    this.setState({ id, street: await this[LOADER](`${URL}/${id}`) });
     await this.loadCity();
-  }
-
-  loadHouseNumbers = async () => {
-    const response = await fetch(`${URL}/${this.id}/housenumbers`);
-    const houseNumbers = await response.json();
-    this.setState({ houseNumbers });
   };
 
-  loadRoadObjects = async () => {
-    const response = await fetch(`${URL}/${this.id}/roadobjects`);
-    const roadObjects = await response.json();
-    this.setState({ roadObjects });
-  };
+  loadHouseNumbers = this.loadUrl('houseNumbers');
 
-  loadRoadSegments = async () => {
-    const response = await fetch(`${URL}/${this.id}/roadsegments`);
-    const roadSegments = await response.json();
-    this.setState({ roadSegments });
-  };
+  loadBuildings = this.loadUrl('buildings');
 
-  loadCity = async () => {
-    const response = await fetch(`${URL}/${this.id}/city`);
-    const city = await response.json();
-    this.setState({ city });
-  };
+  loadPlots = this.loadUrl('plots');
 
-  openCity = () => {
-  }
+  loadRoadObjects = this.loadUrl('roadObjects');
+
+  loadRoadSegments = this.loadUrl('roadSegments');
+
+  loadCity = this.loadUrl('city');
 
   render() {
     const { handleClose, handleToggle, handleChange, handleRequestChange } = this;
-    const { open, slideIndex, street, houseNumbers, roadObjects, roadSegments, city } = this.state;
-    const { bar } = styles;
-    const { muiTheme: {
-      palette: { alternateTextColor, primary1Color, accent2Color },
-    } } = this.props;
-    const flatButton = {
-      color: alternateTextColor,
-      backgroundColor: primary1Color,
-      textDecoration: 'none',
-    };
-    const cardTitle = { backgroundColor: accent2Color };
+    const {
+      open,
+      tabIndex,
+      street,
+      city,
+      houseNumbers,
+      buildings,
+      plots,
+      roadObjects,
+      roadSegments,
+    } = this.state;
     return (
       <div>
         <Drawer docked={false} open={open} onRequestChange={handleRequestChange} width={200}>
           <DrawerList handleClose={handleClose} />
         </Drawer>
-        <AppBar style={bar} zDepth={0} title="Street" onLeftIconButtonTouchTap={handleToggle} />
-        <Tabs onChange={handleChange} value={slideIndex}>
-          <Tab value={STREET} label="Street" />
-          <Tab value={HOUSE_NUMBERS} label="House Numbers" onActive={this.loadHouseNumbers} />
-          <Tab value={ROAD_OBJECTS} label="Road Objects" onActive={this.loadRoadObjects} />
-          <Tab value={ROAD_SEGMENTS} label="Road Segments" onActive={this.loadRoadSegments} />
+        <AppBar title="Street" style={{ height: 48 }} zDepth={0} onLeftIconButtonTouchTap={handleToggle} />
+        <Tabs value={tabIndex} onChange={handleChange}>
+          <Tab label="Street" value={STREET} />
+          <Tab label="House Numbers" value={HOUSE_NUMBERS} onActive={this.loadHouseNumbers} />
+          <Tab label="Buildings" value={BUILDINGS} onActive={this.loadBuildings} />
+          <Tab label="Plots" value={PLOTS} onActive={this.loadPlots} />
+          <Tab label="Road Objects" value={ROAD_OBJECTS} onActive={this.loadRoadObjects} />
+          <Tab label="Road Segments" value={ROAD_SEGMENTS} onActive={this.loadRoadSegments} />
         </Tabs>
-        <SwipeableViews index={slideIndex} onChangeIndex={handleChange}>
-          <Card style={{ margin: 40, width: 400 }} zDepth={2} initiallyExpanded>
-            <CardTitle
-              actAsExpander
-              showExpandableButton
-              title={street && street.label}
-              style={cardTitle}
-            />
-            <CardText expandable style={{ padding: 0 }}>
-              <List>
-                <ListItem primaryText="ID" rightAvatar={<strong><br />{street && street.id}</strong>} />
-                <Divider />
-                <ListItem primaryText="Name" rightAvatar={<strong><br />{street && street.name}</strong>} />
-                <Divider />
-                <ListItem
-                  primaryText="City"
-                  rightAvatar={city && city.name && city.id &&
-                    <FlatButton
-                      label={<Link to={`/city/${city.id}`} style={flatButton}>{city.name}</Link>}
-                      style={flatButton}
-                      onTouchTap={this.openCity}
-                    />
-                  }
-                />
-                <Divider />
-              </List>
-            </CardText>
-          </Card>
-          <HouseNumberList street={street} houseNumbers={houseNumbers} />
-          <RoadObjectList street={street} roadObjects={roadObjects} />
-          <RoadSegmentList street={street} roadSegments={roadSegments} />
+        <SwipeableViews index={tabIndex} onChangeIndex={handleChange}>
+          <StreetView {...{ street, city, buildings, plots, roadObjects, roadSegments }} />
+          <HouseNumberList {...{ street, houseNumbers }} />
+          <BuildingsView {...{ street, buildings }} />
+          <Plots {...{ street, plots }} />
+          <RoadObjectsView {...{ street, roadObjects }} />
+          <RoadSegmentsView {...{ street, roadSegments }} />
         </SwipeableViews>
       </div>
     );
   }
 }
-
-Street.defaultProps = {
-  muiTheme: {},
-};
-
-Street.propTypes = {
-  muiTheme: PropTypes.shape({}),
-};
 
 export default muiThemeable()(Street);

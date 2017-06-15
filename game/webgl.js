@@ -2,49 +2,100 @@
 
 twgl.setDefaults({ attribPrefix: 'a_' });
 
-const { m4, v3 } = twgl;
-const gl = twgl.getContext(document.getElementById('c'));
+/* class CachedClass {
+  static prop(name, defaultValue) {
+    CachedClass[name] = CachedClass[name] || defaultValue;
+    return CachedClass[name];
+  }
+}*/
+
+/* class GL extends CachedClass {
+  static get gl() {
+    return CachedClass.prop('Gl', twgl.getContext(document.getElementById('c')));
+  }
+
+  static get programInfo() {
+    return CachedClass.prop('ProgramInfo', twgl.createProgramInfo(GL.gl, ['vs', 'fs']));
+  }
+
+  static bufferFromArrays({ position, normal, texcoord, indices }) {
+    return twgl.createBufferInfoFromArrays(GL.gl, { position, normal, texcoord, indices });
+  }
+
+  static texture(r, g, b, a) {
+    return twgl.createTexture(GL.gl, {
+      min: GL.gl.NEAREST,
+      mag: GL.gl.NEAREST,
+      src: [r, g, b, a],
+    });
+  }
+
+  static uniforms(tex) {
+    return {
+      u_lightWorldPos: [1, 6, -20],
+      u_lightColor: [0.8, 0.8, 1, 1],
+      u_ambient: [0.1, 0.1, 0.1, 1],
+      u_specular: [1, 1, 1, 1],
+      u_shininess: 50,
+      u_specularFactor: 1,
+      u_diffuse: tex,
+    };
+  }
+
+  static draw(bufferInfo, tex) {
+    const { gl, TRIANGLES, UNSIGNED_SHORT, programInfo } = GL;
+    twgl.setBuffersAndAttributes(gl, programInfo, bufferInfo);
+    twgl.setUniforms(programInfo, GL.uniforms(tex));
+    gl.drawElements(TRIANGLES, bufferInfo.numElements, UNSIGNED_SHORT, 0);
+  }
+}*/
+
+const { m4 } = twgl;
+const { gl, programInfo } = GL;
 const {
-  NEAREST, DEPTH_TEST, CULL_FACE, COLOR_BUFFER_BIT,
-  DEPTH_BUFFER_BIT, TRIANGLES, UNSIGNED_SHORT, VERSION
+  /* NEAREST, */DEPTH_TEST, CULL_FACE, COLOR_BUFFER_BIT,
+  DEPTH_BUFFER_BIT, TRIANGLES, UNSIGNED_SHORT, VERSION,
 } = gl;
 
 console.log(`Using ${gl.getParameter(VERSION)}`);
 if (!twgl.isWebGL2(gl)) {
   console.error('Sorry, this example requires WebGL 2.0');
 }
-const programInfo = twgl.createProgramInfo(gl, ['vs', 'fs']);
 
-const arrays = Lines.toBufferInfoArrays(Polygon.toCenteredLines(Markt19));
+const frame = () => requestAnimationFrame(render);
 
-let arraysList, bufferInfos, h;
+let bufferInfos;
+let h;
+const bufferTypes = [];
 
-fetch('../api/percelen')
-.then(response => response.json())
-.then(result => {
-  arraysList = result;
-  const centers = arraysList.map(({ center: [x, y] }) => ({ x, y }));
-  const bbox = new BBOX(centers);
-  bufferInfos = arraysList.map(({ type, center, position: pos, normal, texcoord, indices }) => {
+const jsonReceived = (result) => {
+  const bbox = new BBOX(result.map(({ center: [x, y] }) => ({ x, y })));
+  const { x, y } = bbox.center;
+  bufferInfos = result.map(({ type, center, position: pos, normal, texcoord, indices }) => {
+    const height = type === 'perceel' ? 1 : 0;
+    bufferTypes.push(type);
     const position = [];
     for (let i = 0; i < pos.length; i += 3) {
-      position.push(pos[i + 2] + (bbox.center.y - center[1]));
-      position.push(type === 'perceel' ? 0 : -10);
-      position.push(pos[i] + (bbox.center.x - center[0]));
+      position.push(pos[i + 2] + (y - center[1]), height, pos[i] + (x - center[0]));
     }
-    return twgl.createBufferInfoFromArrays(gl, { position, normal, texcoord, indices });
+    const buffer = GL.bufferFromArrays({ position, normal, texcoord, indices });
+    buffer.type = type;
+    return buffer;
   });
   h = Math.max(bbox.width, bbox.height);
-  requestAnimationFrame(render);
-});
+  frame();
+};
 
-const marktBuffer = twgl.createBufferInfoFromArrays(gl, arrays);
-
-const tex = twgl.createTexture(gl, {
-  min: NEAREST,
-  mag: NEAREST,
-  src: [255, 255, 255, 255],
-});
+Promise.all([
+  fetch('../api/percelen'),
+  fetch('../api/wegbanen'),
+])
+.then(([percelen, wegbanen]) => Promise.all([
+  percelen.json(),
+  wegbanen.json(),
+]))
+.then(([percelen, wegbanen]) => [].concat(percelen, wegbanen))
+.then(jsonReceived);
 
 const uniforms = {
   u_lightWorldPos: [1, 6, -20],
@@ -53,14 +104,30 @@ const uniforms = {
   u_specular: [1, 1, 1, 1],
   u_shininess: 50,
   u_specularFactor: 1,
-  u_diffuse: tex,
+  u_diffuse: GL.texture(255, 255, 255, 255),
 };
 
-window.addEventListener('wheel', evt => {
-  h -= evt.wheelDelta / 12;
+window.addEventListener('wheel', ({ wheelDelta }) => {
+  h -= wheelDelta / 12;
 }, false);
 
-const render = time => {
+const drawBufferInfo = (bufferInfo) => {
+  twgl.setBuffersAndAttributes(gl, programInfo, bufferInfo);
+  switch (bufferInfo.type) {
+    case 'perceel':
+      Object.assign(uniforms, { u_diffuse: GL.texture(100, 100, 100, 255) });
+      break;
+    case 'hoofdgebouw':
+      Object.assign(uniforms, { u_diffuse: GL.texture(200, 200, 200, 255) });
+      break;
+    default:
+      Object.assign(uniforms, { u_diffuse: GL.texture(255, 0, 0, 255) });
+  }
+  twgl.setUniforms(programInfo, uniforms);
+  gl.drawElements(TRIANGLES, bufferInfo.numElements, UNSIGNED_SHORT, 0);
+};
+
+const render = (time) => {
   time *= 0.001;
   const { canvas } = gl;
   const { width, height, clientWidth, clientHeight } = canvas;
@@ -71,7 +138,7 @@ const render = time => {
   // gl.enable(CULL_FACE);
   gl.clear(COLOR_BUFFER_BIT | DEPTH_BUFFER_BIT);
   const aspectRatio = clientWidth / clientHeight;
-  const projection = m4.perspective(30 * Math.PI / 180, aspectRatio, 600, h);
+  const projection = m4.perspective((30 * Math.PI) / 180, aspectRatio, 600, h);
   const eye = [1, h, h];
   const target = [0, 0, 0];
   const up = [0, 1, 0];
@@ -86,13 +153,6 @@ const render = time => {
     u_worldViewProjection: m4.multiply(viewProjection, world),
   });
   gl.useProgram(programInfo.program);
-  bufferInfos.forEach((bufferInfo, i) => {
-    twgl.setBuffersAndAttributes(gl, programInfo, bufferInfo);
-    twgl.setUniforms(programInfo, uniforms);
-    gl.drawElements(TRIANGLES, bufferInfo.numElements, UNSIGNED_SHORT, 0);
-  });
-  twgl.setBuffersAndAttributes(gl, programInfo, marktBuffer);
-  twgl.setUniforms(programInfo, uniforms);
-  gl.drawElements(TRIANGLES, marktBuffer.numElements, UNSIGNED_SHORT, 0);
-  requestAnimationFrame(render);
-}
+  bufferInfos.forEach(drawBufferInfo);
+  frame();
+};

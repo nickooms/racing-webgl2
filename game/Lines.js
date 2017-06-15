@@ -1,4 +1,8 @@
-class Lines {
+import Point2D from './Point2D.js';
+import Float from './Float.js';
+import { flatten } from './util.js';
+
+export default class Lines {
   static toBufferInfoArrays(lines) {
     return {
       position: flatten(lines.map(([from, to]) => [

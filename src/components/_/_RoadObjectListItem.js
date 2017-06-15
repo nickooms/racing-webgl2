@@ -1,4 +1,5 @@
-import React, { PropTypes } from 'react';
+import React from 'react';
+import PropTypes from 'prop-types';
 import { TableRow, TableRowColumn } from 'material-ui/Table';
 import muiThemeable from 'material-ui/styles/muiThemeable';
 import './index.css';

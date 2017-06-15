@@ -11,6 +11,7 @@ import Home from './containers/Home';
 import Street from './components/Street';
 import City from './components/City';
 import Building from './components/Building';
+import Plot from './components/Plot';
 import HouseNumberList from './components/HouseNumberList';
 import HouseNumber from './components/HouseNumber';
 import RoadObjectList from './components/RoadObjectList';
@@ -40,6 +41,7 @@ render((
         <Route path="housenumbers/:streetId" component={HouseNumberList} />
         <Route path="housenumber/:houseNumberId" component={HouseNumber} />
         <Route path="building/:buildingId" component={Building} />
+        <Route path="plot/:plotId" component={Plot} />
         <Route path="roadobjects/:streetId" component={RoadObjectList} />
         {/* <Route path="roadobject/:roadObjectId" component={RoadObject} />*/}
         <Route path="roadsegments/:streetId" component={RoadSegmentList} />

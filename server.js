@@ -18,7 +18,10 @@ const City = require('./model/City');
 const Street = require('./model/Street');
 const HouseNumber = require('./model/HouseNumber');
 const Building = require('./model/Building');
-const { dir } = require('./util');
+const Plot = require('./model/Plot');
+// const RoadObject = require('./model/RoadObject');
+// const { dir } = require('./util');
+const { flatten } = require('./functional');
 
 process.on('unhandledRejection', (reason, promise) => {
   console.log(chalk.red.bold('[PROCESS] Unhandled Promise Rejection'));
@@ -307,13 +310,21 @@ app.route('/svg/huisnummer/:HuisnummerId')
 app.route('/layers')
   .get(Layers.json);
 
-/* const pre = x => `
+const pre = x => `
   <html>
     <body>
       <pre>${JSON.stringify(x, null, 2)}</pre>
     </body>
   </html>
-`;*/
+`;
+
+const getId = ({ id }) => id;
+
+// const onlyId = ({ id }) => ({ id });
+
+const unique = x => [...new Set(x)];
+
+const uniqueIds = x => unique(x.map(getId));
 
 app.route('/city/:id')
   .get(async ({ params: { id } }, res) => {
@@ -346,6 +357,43 @@ streetChild('HouseNumbers');
 streetChild('RoadObjects');
 streetChild('RoadSegments');
 
+const streetBuildings = async ({ params: { id, fmt = false } }, res) => {
+  const street = new Street(id);
+  const houseNumbers = await street.HouseNumbers;
+  const buildingIdPromises = houseNumbers.map(x => x.Buildings);
+  const houseNumbersBuildings = await Promise.all(buildingIdPromises);
+  const ids = uniqueIds(flatten(houseNumbersBuildings));
+  const buildingPromises = ids.map(x => new Building(x).get());
+  const buildings = await Promise.all(buildingPromises);
+  if (fmt) res.send(pre(buildings)); else res.json(buildings);
+};
+
+app.route('/street/:id/buildings').get(streetBuildings);
+app.route('/street/:id/buildings/:fmt').get(streetBuildings);
+
+const streetPlots = async ({ params: { id, fmt = false } }, res) => {
+  const street = new Street(id);
+  const houseNumbers = await street.HouseNumbers;
+  const plotIdPromises = houseNumbers.map(x => x.Plots);
+  const houseNumbersPlots = await Promise.all(plotIdPromises);
+  const ids = uniqueIds(flatten(houseNumbersPlots));
+  const plotPromises = ids.map(x => new Plot(x).get());
+  const plots = await Promise.all(plotPromises);
+  if (fmt) res.send(pre(plots)); else res.json(plots);
+};
+
+app.route('/street/:id/plots').get(streetPlots);
+app.route('/street/:id/plots/:fmt').get(streetPlots);
+
+/* const streetRoadObjects = async ({ params: { id, fmt = false } }, res) => {
+  const street = new Street(id);
+  const roadObjects = await street.RoadObjects;
+  if (fmt) res.send(pre(roadObjects)); else res.json(roadObjects);
+};
+
+app.route('/street/:id/roadObjects').get(streetRoadObjects);
+app.route('/street/:id/roadObjects/:fmt').get(streetRoadObjects);*/
+
 app.route('/housenumber/:id')
   .get(async ({ params: { id } }, res) =>
     res.json(await new HouseNumber(id).get()));
@@ -358,6 +406,10 @@ houseNumberChild('Plots');
 app.route('/building/:id')
   .get(async ({ params: { id } }, res) =>
     res.json(await new Building(+id).get()));
+
+app.route('/plot/:id')
+  .get(async ({ params: { id } }, res) =>
+    res.json(await new Plot(id).get()));
 
 imageRoutes(app);
 

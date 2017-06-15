@@ -9,7 +9,7 @@ const {
   HAS_STREET,
   HOUSE_NUMBERS,
   ROAD_OBJECTS, ROAD_OBJECT,
-  ROAD_SEGMENTS, ROAD_SEGMENT
+  ROAD_SEGMENTS, ROAD_SEGMENT,
 } = require('./Symbols');
 
 const ID = 'StraatnaamId';

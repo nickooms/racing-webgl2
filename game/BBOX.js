@@ -1,4 +1,4 @@
-class BBOX {
+export default class BBOX {
   constructor(points) {
     this.min = { x: Infinity, y: Infinity };
     this.max = { x: -Infinity, y: -Infinity };
@@ -50,5 +50,3 @@ class BBOX {
     });
   }
 }
-
-if (typeof module !== 'undefined') module.exports = BBOX;
